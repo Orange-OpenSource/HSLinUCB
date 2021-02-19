@@ -1,0 +1,71 @@
+------------
+Apache 2.0
+------------
+
+Dependency....: Kafka
+Repository....: https://github.com/dpkp/kafka-python
+License.......: https://github.com/dpkp/kafka-python/blob/master/LICENSE
+
+Dependency....: Keras
+Repository....: https://github.com/keras-team/keras
+License.......: https://github.com/keras-team/keras/blob/master/LICENSE
+
+Dependency....: Kubernetes Python client
+Repository....: https://github.com/kubernetes-client/python
+License.......: https://github.com/kubernetes-client/python/blob/master/LICENSE
+
+Dependency....: json5
+Repository....: https://github.com/dpranke/pyjson5
+License.......: https://github.com/dpranke/pyjson5/blob/master/LICENSE
+
+Dependency....: Tensorflow
+Repository....: https://github.com/tensorflow/tensorflow
+License.......: https://github.com/tensorflow/tensorflow/blob/master/LICENSE
+
+------------
+BSD 3-Clause
+------------
+
+Dependency....: h5py
+Repository....: https://github.com/h5py/h5py
+License.......: https://github.com/h5py/h5py/blob/master/LICENSE
+
+Dependency....: IPython
+Repository....: https://github.com/ipython/ipython
+License.......: https://github.com/ipython/ipython/blob/master/LICENSE
+
+Dependency....: Numpy
+Repository....: https://github.com/numpy/numpy
+License.......: https://github.com/numpy/numpy/blob/master/LICENSE.txt
+
+Dependency....: Pandas
+Repository....: https://github.com/pandas-dev/pandas
+License.......: https://github.com/pandas-dev/pandas/blob/master/LICENSE
+
+Dependency....: Scipy
+Repository....: https://github.com/scipy/scipy
+License.......: https://github.com/scipy/scipy/blob/master/LICENSE.txt
+
+Dependency....: Seaborn
+Repository....: https://github.com/mwaskom/seaborn
+License.......: https://github.com/mwaskom/seaborn/blob/master/LICENSE
+
+------------
+MIT
+------------
+
+Dependency....: Pickelshare
+Repository....: https://github.com/pickleshare/pickleshare
+License.......: https://github.com/pickleshare/pickleshare/blob/master/LICENSE
+
+Dependency....: Sdnotify
+Repository....: https://github.com/bb4242/sdnotify
+License.......: https://github.com/bb4242/sdnotify/blob/master/LICENSE.txt
+
+Dependency....: tqdm
+Repository....: https://github.com/tqdm/tqdm
+License.......: https://github.com/tqdm/tqdm/blob/master/LICENCE
+
+Dependency....: Urllib3
+Repository....: https://github.com/urllib3/urllib3/
+License.......: https://github.com/urllib3/urllib3/blob/main/LICENSE.txt
