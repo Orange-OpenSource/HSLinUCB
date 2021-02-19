@@ -1,5 +1,5 @@
 # HSLinUCB
-This repository containes the simulation and environment code used in the paper Horizontal Scaling using Contextual Bandits
+This repository contains the simulation and environment code used in the paper Horizontal Scaling using Contextual Bandits
 
 ## Simulation
 The directory "simulation" contains all the Jupyter notebooks used in the simulation section of the paper. See the README.MD under this directory for more details.
