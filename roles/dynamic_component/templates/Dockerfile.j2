@@ -1,0 +1,40 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+FROM httpd:2.4
+RUN apt-get update
+RUN apt-get -y upgrade
+RUN apt-get install -y xz-utils curl procps net-tools wget python3-pip tcpdump lsof strace openssh-client nvi apache2 python-pip python libapache2-mod-wsgi-py3
+ADD ConsumeFixedCpu.wsgi /usr/local/apache2/htdocs/
+ADD ConsumeFixedCpu /usr/local/apache2/htdocs/
+ADD ConsumeFixedCpuWait.wsgi /usr/local/apache2/htdocs/
+ADD ConsumeFixedCpuWait /usr/local/apache2/htdocs/code/
+ADD Index.wsgi /usr/local/apache2/htdocs/
+ADD index.html /usr/local/apache2/htdocs/code/
+ADD Proxy.wsgi /usr/local/apache2/htdocs/
+ADD Proxy /usr/local/apache2/htdocs/code/
+ADD ProxyWait.wsgi /usr/local/apache2/htdocs/
+ADD ProxyWait /usr/local/apache2/htdocs/code/
+ADD Proxy2BackParallel /usr/local/apache2/htdocs/code/
+ADD Proxy2BackSerial /usr/local/apache2/htdocs/code/
+ADD Proxy2BackSerial.wsgi /usr/local/apache2/htdocs
+ADD ResponseSize.wsgi /usr/local/apache2/htdocs/
+ADD ResponseSize /usr/local/apache2/htdocs/code/
+ADD ResponseTime.wsgi /usr/local/apache2/htdocs/
+ADD ResponseTime /usr/local/apache2/htdocs/code/
+ADD ResponseTimeSize.wsgi /usr/local/apache2/htdocs/
+ADD ResponseTimeSize /usr/local/apache2/htdocs/code/
+ADD allenv.wsgi /usr/local/apache2/htdocs/
+ADD allenv /usr/local/apache2/htdocs/code/
+ADD requirements.txt /
+WORKDIR /
+RUN pip3 install -r requirements.txt 
+
+RUN pip2 install -r requirements.txt
+COPY ./httpd.conf /usr/local/apache2/conf/httpd.conf
+COPY preStophook.py /

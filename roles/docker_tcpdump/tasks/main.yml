@@ -1,0 +1,37 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Create directory /tmp/docker_tcpdump
+  file:
+    path: "/tmp/docker_tcpdump"
+    state: directory
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy docker_tcpdump dockerfile
+  template:
+    src: "{{ item }}"
+    dest: "/tmp/docker_tcpdump/{{ item }}"
+  with_items:
+    - "Dockerfile"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Build docker_tcpdump image
+  docker_image:
+    path: /tmp/docker_tcpdump
+    name: "{{ ansible_default_ipv4.address }}:5000/tcpdump"
+    tag: "1"
+    push: yes
+  when: groups['master'][0] == inventory_hostname
+
+- name: Deploy docker_tcpdump script
+  template:
+    src: "docker-tcpdump"
+    dest: "/usr/local/bin/docker-tcpdump"
+    mode: 0755
+    owner: root
+    group: root

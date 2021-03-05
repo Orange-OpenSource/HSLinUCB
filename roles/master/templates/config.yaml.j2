@@ -1,0 +1,54 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: tni46o.we8nbegt9uctd28t
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 0.0.0.0
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/dockershim.sock
+  name: {{ ansible_hostname }}
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+---
+apiServer:
+  certSANs:
+{% if (groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])%}  - {{ hostvars[groups['master'][0]].ansible_default_ipv4.address }}{% endif %}
+
+  extraArgs:
+    apiserver-count: "3"
+  timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta2
+certificatesDir: /etc/kubernetes/pki
+clusterName: testbed-pf1
+{% if (groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])%}controlPlaneEndpoint: {{ hostvars[groups['master'][0]].ansible_default_ipv4.address }}:6443{% endif %}
+
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  external:
+    caFile: /etc/etcd/ca.pem
+    certFile: /etc/etcd/testbed-pf1.pem
+    endpoints:
+{% if (groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])%}
+{% for host in groups['master'] %}
+    - https://{{ host|replace("_","-") }}.kubernetes:2379
+{% endfor %}
+{% endif %}
+    keyFile: /etc/etcd/testbed-pf1-key.pem
+imageRepository: k8s.gcr.io
+kind: ClusterConfiguration
+kubernetesVersion: v1.19.3
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.9.0.0/16
+  serviceSubnet: 10.10.0.0/16
+scheduler: {}

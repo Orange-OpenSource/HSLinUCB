@@ -1,0 +1,26 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: install basic packages
+  apt: package={{ item }}  update_cache=yes
+  with_items:
+    - jq
+    - tree
+    - python-yaml
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - haveged
+  become: yes
+  become_method: sudo
+
+- name: swap - disable swap
+  command: swapoff --all
+  ignore_errors: yes
+  changed_when: no
+  become: yes

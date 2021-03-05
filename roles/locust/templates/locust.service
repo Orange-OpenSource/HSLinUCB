@@ -1,0 +1,27 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+[Unit]
+Description=Locust
+After=syslog.target network.target
+
+[Service]
+User=root
+Environment="PATH=/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/anaconda/bin"
+{% if groups['stress']| length < 2 %}
+ExecStart=/opt/anaconda/envs/locust/bin/locust -f /root/locustfile.py -H http://dynamic-component.service.pf1:{{ ingress_gateway_port }}
+{% else %}
+{% if inventory_hostname == groups['stress'][0] %}
+ExecStart=/opt/anaconda/envs/locust/bin/locust -f /root/locustfile.py --master -H http://dynamic-component.service.pf1:{{ ingress_gateway_port }}
+{% else %}
+ExecStart=/opt/anaconda/envs/locust/bin/locust -f /root/locustfile.py --worker --master-host {{hostvars[groups['stress'][0]].ansible_default_ipv4.address}}
+{% endif %}
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

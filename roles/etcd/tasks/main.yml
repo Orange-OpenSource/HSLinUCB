@@ -1,0 +1,16 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- include: install.yml
+
+- include: register.yml
+  when: inventory_hostname != groups['master'][0]
+  loop: "{{groups['master']}}"
+  loop_control:
+    index_var: etcd_index

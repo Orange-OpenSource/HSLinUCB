@@ -1,0 +1,150 @@
+#Kafka topic list
+kafka-topics --list --zookeeper kafka-cp-zookeeper:2181
+
+#Kafka produce message from file
+kafka-console-producer --broker-list kafka-cp-kafka:9092 --topic <topic name> < messages.txt
+
+#Kafka produce message from console
+echo '{ "transactionId": 1, "order": "LocustMgmt", "payload": { "order": "set_user_level", "level": 1 , "spawn_rate": 1} }' | kafka-console-producer --broker-list kafka-cp-kafka:9092 --topic action
+
+#Kafka display complete topic message
+kafka-console-consumer --bootstrap-server kafka-cp-kafka:9092 --from-beginning --topic <topic name> 
+
+#Kafka current topics list
+locust_order: Order action for locust
+locust: locust stats report
+locust_details: locust request reponse time details
+action: Order action for orchestrator
+action_result: Response from orchestrator for order ask on action topics
+zipkin: zipkin traces
+
+#Locust direct call through kafka
+#Direct message to send to 'locust_order' kafka topic for locust management
+# Decrease current user number with one at rate 1
+{ "order": "step_user_level", "level": -1 , "spawn_rate": 1}
+
+# Decrease current user number with one at rate 1 
+{ "order": "step_user_level", "level": -1 , "spawn_rate": 1, "reset_stats": "False" } 
+
+# Decrease current user number with one at rate 1 with resetting locust statistics
+{ "order": "step_user_level", "level": -1 , "spawn_rate": 1, "reset_stats": "True" }
+
+# Increase current user number by one at rate 1 
+{ "order": "step_user_level", "level": 1, "spawn_rate": 1}
+
+# Increase current user number by one at rate 1
+{ "order": "step_user_level", "level": 1, "spawn_rate": 1, "reset_stats": "False" }
+
+# Increase current user number by one at rate 1 with resetting locust statistics
+{ "order": "step_user_level", "level": 1, "spawn_rate": 1, "reset_stats": "True" }
+
+#Resetting locust statistics
+{ "order": "reset" }
+
+#Fixing current user number to 2 with user creation/deletion at rate 1
+{ "order": "set_user_level", "level": 2, "spawn_rate": 1, "reset_stats": False }
+
+#Fixing current user number to 1 with user creation/deletion at rate 1
+{ "order": "set_user_level", "level": 1, "spawn_rate": 1}
+
+#Fixing current user number to 2 with user creation/deletion at rate 1 and resetting locust statistics
+{ "order": "set_user_level", "level": 2, "spawn_rate": 1, "reset_stats": "True" }
+
+#Stop locust injection
+{"order": "stop"}
+
+#locust will produce statistics in 'locust' kafka topics and details request response time in 'locust_details' kafka topic.
+
+#Orchestrator calls through kafka topics
+Every call must be done on the 'action' topic
+Orchestrator will respond on the 'action_result' topic with transactionId, passed message and result:[OK|ERROR] and a reason field if result=ERROR
+
+#Same locust message can be used through orchestrator with the following format. Message must be sent to 'action' kafka topic:
+
+{ "transactionId": 1, "order": "LocustMgmt", "payload": <locust order>}
+
+example 1 set current locust user to 1 at rate 1:
+{ "transactionId": 1, "order": "LocustMgmt", "payload": { "order": "set_user_level", "level": 1 , "spawn_rate": 1} }
+
+example 2 decrease current locust user number with one at rate 1:
+{ "transactionId": 1, "order": "LocustMgmt", "payload": { "order": "step_user_level", "level": -1 , "spawn_rate": 1} }
+
+#For changing the number of record kept in prometheus dataframe (here 20 traces will be kept)
+{ "transactionId": 1, "order": "ChangeConfig", "component": "prometheus", "trace_number": 20}
+
+#For changing the number of unique trace kept in zipkin dataframe (here, zipkin dataframe will hold 20 unique trace. Recall a trace can be composed of multiple sub trace)
+{ "transactionId": 1, "order": "ChangeConfig", "component": "zipkin", "trace_number": 20}
+
+#Call a state view generation:
+{ "transactionId": 1, "order": "getState"}
+
+The state view is then available in the 'state' topic with transactionId, zipkin, prometheus field
+
+#Scale deployment named front-dynamic-component to 5 components
+
+{ "transactionId": 1, "order": "scaleSUT", "level": 5, "deployment": "front-dynamic-component", "mode": "fixed"}
+
+#Increase deployment named front-dynamic-component by adding 3 components in one step
+{ "transactionId": 1, "order": "scaleSUT", "level": 3, "deployment": "front-dynamic-component", "mode": "incremental"}
+
+#Increase deployment named front-dynamic-component by adding 1 components in one step
+{ "transactionId": 1, "order": "scaleSUT", "level": 3, "deployment": "front-dynamic-component", "mode": "incremental"}
+
+#Decrease deployment named front-dynamic-component by deleting 1 components in one step
+{ "transactionId": 1, "order": "scaleSUT", "level": -1, "deployment": "front-dynamic-component", "mode": "incremental"}
+
+#Decrease deployment named front-dynamic-component by deleting 2 components in one step
+{ "transactionId": 1, "order": "scaleSUT", "level": -2, "deployment": "front-dynamic-component", "mode": "incremental"}
+
+#ZIPKIN
+Pure zipkin trace are injected by zipkin in 'zipkin' kafka topic
+
+#Stop zipking thread
+{ "transactionId": 10, "order": "stopZipkin"}
+
+#Start zipkin thread
+{ "transactionId": 10, "order": "startZipkin"}
+
+#Reset zipkin stats
+{ "transactionId": 10, "order": "resetZipkinStats"}
+
+#Activate zipkin thread debugging
+{ "transactionId": 10, "order": "activateDebug", "component": "zipkin"}
+
+#Deactivate zipkin thread debugging
+{ "transactionId": 10, "order": "deactivateDebug", "component": "zipkin"}
+
+#Prometheus
+#Stop prometheus thread
+{ "transactionId": 10, "order": "stopPrometheus"}
+
+#Start prometheus thread
+{ "transactionId": 10, "order": "startPrometheus"}
+
+#Reset prometheus stats
+{ "transactionId": 10, "order": "resetPrometheusStats"}
+
+#Activate prometheus thread debugging
+{ "transactionId": 10, "order": "activateDebug", "component": "prometheus"}
+
+#Deactivate prometheus thread debugging
+{ "transactionId": 10, "order": "deactivateDebug", "component": "prometheus"}
+
+#Stop zipkin and prometheus thread in one call
+{ "transactionId": 10, "order": "stopZipkinPrometheus"}
+
+#Start zipkin and prometheus thread in one call
+{ "transactionId": 10, "order": "startZipkinPrometheus"}
+
+#Reset zipkin and prometheus stats in one call
+{ "transactionId": 10, "order": "resetZipkinPrometheusStats"}
+
+
+#Activate orchestrator debugging
+{ "transactionId": 10, "order": "activateDebug", "component": "orchestrator"}
+
+#Deactivate orchestrator debugging
+{ "transactionId": 10, "order": "deactivateDebug", "component": "orchestrator"}
+
+#Set deployment limit (if deployment does not exist it will be added to the list )
+{ "order": "setDeploymentLimit", "deployment": "front-dynamic-component", "min": 1, "max": 40}

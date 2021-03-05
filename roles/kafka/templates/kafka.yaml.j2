@@ -1,0 +1,360 @@
+---
+# Source: cp-helm-charts/charts/cp-kafka/templates/headless-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-cp-kafka-headless
+  namespace: kafka-system
+  labels:
+    app: cp-kafka
+    chart: cp-kafka-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  ports:
+    - port: 9092
+      name: broker
+  clusterIP: None
+  selector:
+    app: cp-kafka
+    release: kafka
+---
+# Source: cp-helm-charts/charts/cp-kafka/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-cp-kafka
+  namespace: kafka-system
+  labels:
+    app: cp-kafka
+    chart: cp-kafka-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  ports:
+    - port: 9092
+      name: broker
+  selector:
+    app: cp-kafka
+    release: kafka
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-external
+  namespace: kafka-system
+  labels:
+    app: cp-kafka
+    release: kafka
+spec:
+  ports:
+  - port: 31090
+    name: external
+  externalIPs:
+  - {{ ansible_default_ipv4.address }}
+  selector:
+    app: cp-kafka
+    release: kafka
+
+---
+# Source: cp-helm-charts/charts/cp-zookeeper/templates/headless-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-cp-zookeeper-headless
+  namespace: kafka-system
+  labels:
+    app: cp-zookeeper
+    chart: cp-zookeeper-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  ports:
+    - port: 2888
+      name: server
+    - port: 3888
+      name: leader-election
+  clusterIP: None
+  selector:
+    app: cp-zookeeper
+    release: kafka
+---
+# Source: cp-helm-charts/charts/cp-zookeeper/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-cp-zookeeper
+  namespace: kafka-system
+  labels:
+    app: cp-zookeeper
+    chart: cp-zookeeper-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  type: 
+  ports:
+    - port: 2181
+      name: client
+  selector:
+    app: cp-zookeeper
+    release: kafka
+---
+# Source: cp-helm-charts/charts/cp-kafka/templates/tests/canary-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "kafka-canary"
+  namespace: kafka-system
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+spec:
+  containers:
+  - name: kafka-canary
+    image: "confluentinc/cp-kafka:5.0.1"
+    imagePullPolicy: "IfNotPresent"
+    command:
+    - sh
+    - -c
+    - |
+      # Delete the topic if it exists
+      kafka-topics --zookeeper kafka-cp-zookeeper:2181 --topic kafka-cp-kafka-canary-topic --delete --if-exists
+      # Create the topic
+      kafka-topics --zookeeper kafka-cp-zookeeper:2181 --topic kafka-cp-kafka-canary-topic --create --partitions 1 --replication-factor 1 --if-not-exists && \
+      # Create a message
+      MESSAGE="`date -u`" && \
+      # Produce a test message to the topic
+      echo "$MESSAGE" | kafka-console-producer --broker-list kafka-cp-kafka:9092 --topic kafka-cp-kafka-canary-topic && \
+      # Consume a test message from the topic
+      kafka-console-consumer --bootstrap-server kafka-cp-kafka-headless:9092 --topic kafka-cp-kafka-canary-topic --from-beginning --timeout-ms 2000 | grep "$MESSAGE"
+  restartPolicy: OnFailure
+---
+# Source: cp-helm-charts/charts/cp-kafka/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-cp-kafka
+  namespace: kafka-system
+  labels:
+    app: cp-kafka
+    chart: cp-kafka-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  selector:
+    matchLabels:
+      app: cp-kafka
+      release: kafka
+  serviceName: kafka-cp-kafka-headless
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cp-kafka
+        release: kafka
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - cp-kafka
+                  - key: "release"
+                    operator: In
+                    values:
+                    - kafka
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: cp-kafka-broker
+        image: "confluentinc/cp-kafka:5.0.1"
+        imagePullPolicy: "IfNotPresent"
+        ports:
+        - containerPort: 9092
+          name: kafka
+        - containerPort: 31090
+          name: external
+        - containerPort: 5555
+          name: jmx
+        resources:
+          {}
+          
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: KAFKA_HEAP_OPTS
+          value: -Xms256M -Xmx256M
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "kafka-cp-zookeeper:2181"
+        - name: KAFKA_LOG_DIRS
+          value: "/opt/kafka/data-0/logs"
+        - name: "KAFKA_LOG_RETENTION_HOURS"
+          value: "1"
+        - name: "KAFKA_LOG_RETENTION_MINUTES"
+          value: "5"
+        - name: "KAFKA_MESSAGE_MAX_BYTES"
+          value: "104858800"
+        - name: "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP"
+          value: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
+        - name: "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"
+          value: "1"
+        # This is required because the Downward API does not yet support identification of
+        # pod numbering in statefulsets. Thus, we are required to specify a command which
+        # allows us to extract the pod ID for usage as the Kafka Broker ID.
+        # See: https://github.com/kubernetes/kubernetes/issues/31218
+        command:
+        - sh
+        - -exc
+        - |
+          export KAFKA_BROKER_ID=${HOSTNAME##*-} && \
+          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${POD_IP}:9092,EXTERNAL://{{ ansible_ssh_host }}:$((31090 + ${KAFKA_BROKER_ID})) && \
+          exec /etc/confluent/docker/run
+        volumeMounts:
+        - name: datadir-0
+          mountPath: /opt/kafka/data-0
+      volumes:
+      - name: datadir-0
+        emptyDir: {}
+
+---
+# Source: cp-helm-charts/charts/cp-zookeeper/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-cp-zookeeper
+  namespace: kafka-system
+  labels:
+    app: cp-zookeeper
+    chart: cp-zookeeper-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  selector:
+    matchLabels:
+      app: cp-zookeeper
+      release: kafka
+  serviceName: kafka-cp-zookeeper-headless
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cp-zookeeper
+        release: kafka
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - cp-zookeeper
+                  - key: "release"
+                    operator: In
+                    values:
+                    - kafka
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: cp-zookeeper-server
+        image: "confluentinc/cp-zookeeper:5.0.1"
+        imagePullPolicy: "IfNotPresent"
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: server
+        - containerPort: 3888
+          name: leader-election
+        resources:
+          {}
+          
+        env:
+        - name : KAFKA_HEAP_OPTS
+          value: "-Xms256M -Xmx256M"
+        - name : ZOOKEEPER_TICK_TIME
+          value: "2000"
+        - name : ZOOKEEPER_SYNC_LIMIT
+          value: "5"
+        - name : ZOOKEEPER_INIT_LIMIT
+          value: "10"
+        - name : ZOOKEEPER_MAX_CLIENT_CNXNS
+          value: "60"
+        - name : ZOOKEEPER_AUTOPURGE_SNAP_RETAIN_COUNT
+          value: "3"
+        - name : ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL
+          value: "24"
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name : ZOOKEEPER_SERVERS
+          value: "{% for id in range(0,1) %}kafka-cp-zookeeper-{{ loop.index0 }}.kafka-cp-zookeeper-headless.kafka-system:2888:3888{% if not loop.last %};{% endif %}{% endfor %}"
+        # ZOOKEEPER_SERVER_ID is required just to pass cp-zookeeper ensure script for env check,
+        # the value(metadata.mame) is not used and will be overwritten in command part
+        - name: ZOOKEEPER_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        command:
+        - "bash"
+        - "-c"
+        - |
+          ZK_FIX_HOST_REGEX="s/${HOSTNAME}\.[^:]*:/0.0.0.0:/g"
+          ZOOKEEPER_SERVER_ID=$((${HOSTNAME##*-}+1)) \
+          ZOOKEEPER_SERVERS=`echo $ZOOKEEPER_SERVERS | sed -e "$ZK_FIX_HOST_REGEX"` \
+          /etc/confluent/docker/run
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/zookeeper/data
+        - name: datalogdir
+          mountPath: /var/lib/zookeeper/log
+      volumes:
+      
+      - name: datadir
+        emptyDir: {}
+      - name: datalogdir
+        emptyDir: {}
+
+---
+# Source: cp-helm-charts/charts/cp-zookeeper/templates/poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-cp-zookeeper-pdb
+  namespace: kafka-system
+  labels:
+    app: cp-zookeeper
+    chart: cp-zookeeper-0.1.0
+    release: kafka
+    heritage: Tiller
+spec:
+  selector:
+    matchLabels:
+      app: cp-zookeeper
+      release: kafka
+  maxUnavailable: 1
+
+---
+# Source: cp-helm-charts/charts/cp-kafka/templates/nodeport-service.yaml
+

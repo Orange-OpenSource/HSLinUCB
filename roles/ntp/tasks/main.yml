@@ -1,0 +1,22 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Generate ntp configuration file
+  template:
+    src: timesyncd.conf.j2
+    dest: /etc/systemd/timesyncd.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Stop ntp synchronisation
+  shell: timedatectl set-ntp false
+
+- name: Start ntp synchronisation
+  shell: timedatectl set-ntp true

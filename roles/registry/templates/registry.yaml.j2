@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: registry
+  namespace: kube-system
+type: Opaque
+data:
+  domain_cert: {{ registry_certificate.stdout }}
+  domain_key: {{ registry_key.stdout }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: kube-system
+  labels:
+    app: registry
+spec:
+  ports:
+  - port: 5000
+  externalIPs:
+  - {{ ansible_default_ipv4.address }}
+  selector:
+    app: registry
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: kube-system
+  labels:
+    app: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: registry
+    spec:
+      volumes:
+      - name: registry
+        secret:
+          secretName: registry
+      - name: registry-storage
+        persistentVolumeClaim:
+          claimName: registry-nfs-pvc
+      containers:
+      - name: registry-pod
+        image: registry:2
+        ports:
+        - containerPort: 5000
+        env:
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /certs/domain_cert
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: /certs/domain_key
+        volumeMounts:
+          - name: registry
+            mountPath: /certs
+          - name: registry-storage
+            mountPath: /var/lib/registry
+---

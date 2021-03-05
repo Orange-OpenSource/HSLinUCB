@@ -1,0 +1,130 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Create directory /tmp/dynamic_component
+  file:
+    path: "/tmp/dynamic_component"
+    state: directory
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy component files
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/dynamic_component/{{ item }}"
+  with_items:
+    - "httpd.conf"
+    - "requirements.txt"
+    - "Proxy.wsgi"
+    - "allenv.wsgi"
+    - "ConsumeFixedCpu.wsgi"
+    - "ResponseSize.wsgi"
+    - "ConsumeFixedCpuWait.wsgi"
+    - "Proxy2BackSerial.wsgi"
+    - "ResponseTime.wsgi"
+    - "Index.wsgi"
+    - "ProxyWait.wsgi"
+    - "ResponseTimeSize.wsgi"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Generate preStophook.py
+  template:
+    src: "preStophook.py"
+    dest: "/tmp/dynamic_component/preStophook.py"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Generate dockerfile
+  template:
+    src: "Dockerfile.j2"
+    dest: "/tmp/dynamic_component/Dockerfile"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy executable component files
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/dynamic_component/{{ item }}"
+    mode: 0755
+  with_items:
+    - "Proxy"
+    - "allenv"
+    - "ConsumeFixedCpu"
+    - "ResponseSize"
+    - "Proxy2BackParallel"
+    - "index.html"
+    - "ConsumeFixedCpuWait"
+    - "Proxy2BackSerial"
+    - "ResponseTime"
+    - "ProxyWait"
+    - "ResponseTimeSize"
+  when: groups['master'][0] == inventory_hostname
+
+
+################Section to update if modifications are made in Dockerfile (see Dockerfile for relevant comments)
+
+- name: Remove sources.list image in Dockerfile
+  lineinfile:
+    dest: "/tmp/dynamic_component/Dockerfile"
+    regexp: "ADD sources.list /etc/apt/sources.list"
+    state: absent
+  when: groups['master'][0] == inventory_hostname and CloudName is defined and CloudName|lower != 'devwatt'
+
+- name: Remove artifactory usage in Dockerfile
+  lineinfile:
+    dest: "/tmp/dynamic_component/Dockerfile"
+    regexp: "RUN pip2 install -r requirements.txt -i https://artifactory-iva.si.francetelecom.fr/artifactory/api/pypi/python-virt-orange-product-devops/simple$"
+    line: "RUN pip2 install -r requirements.txt"
+    state: present
+  when: groups['master'][0] == inventory_hostname and CloudName is defined and CloudName|lower != 'devwatt'
+
+################End of section
+
+- name: Build docker image
+  docker_image:
+    path: /tmp/dynamic_component
+    name: "{{ ansible_default_ipv4.address }}:5000/dynamic_component"
+    tag: "v1"
+    push: yes
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy service platform namespace template
+  template:
+    src: "service-platform-namespace.yml.j2"
+    dest: "/tmp/dynamic_component/default-namespace.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy http gateway for service platform
+  template:
+    src: "service-platform-http-gateway.yml.j2"
+    dest: "/tmp/dynamic_component/default-http-gateway.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create service plateform namespace
+  command: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/dynamic_component/default-namespace.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Deploying http-gateway for service platform
+  command: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/dynamic_component/default-http-gateway.yml"
+  register: gateway_deploy
+  until: gateway_deploy.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: template front dynamic component deployment file
+  template:
+    src: "front-dynamic-component.yaml"
+    dest: "/tmp/dynamic_component/front-dynamic-component.yaml"
+  when: groups['master'][0] == inventory_hostname 
+
+- name: Deploy front-dynamic-component in kubernetes
+  shell: "kubectl apply -f /tmp/dynamic_component/front-dynamic-component.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname

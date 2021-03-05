@@ -1,0 +1,99 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-dynamic-component-service
+  namespace: default
+  labels:
+    app: front-dynamic-component
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+  selector:
+    app: front-dynamic-component
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: front-dynamic-component
+  labels:
+    account: front-dynamic-component
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  labels:
+    app: "front-dynamic-component"
+    version: "v1"
+  name: "front-dynamic-component"
+  namespace: "default"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "front-dynamic-component"
+      version: "v1"
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: "front-dynamic-component"
+        version: "v1"
+    spec:
+      serviceAccountName: front-dynamic-component
+      containers:
+      - name: front-dynamic-component-pod
+        image: {{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:5000/dynamic_component:v1
+        imagePullPolicy: Always
+        lifecycle:
+          preStop:
+            exec:
+              command: ["python", "/preStophook.py"]
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
+        ports:
+        - containerPort: 80
+        env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: CONSUL_HTTP_ADDR
+            value: "$(MY_POD_IP):8500"
+          - name: COMPONENT_NAME
+            value: "front component"
+          - name: BACK_COMPONENT_HOSTNAME
+            value: "back-dynamic-component-service.default.svc.cluster.local"
+      terminationGracePeriodSeconds: 300
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: front-dynamic-component
+  namespace: default
+spec:
+  hosts:
+  - "dynamic-component.service.pf1"
+  gateways:
+  - http-gateway
+  http:
+  - route:
+    - destination:
+        host: front-dynamic-component-service
+        port:
+          number: 80

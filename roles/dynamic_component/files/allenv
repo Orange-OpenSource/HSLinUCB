@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+from random import uniform
+import time
+import os
+import math
+import requests
+from cgi import parse_qs
+ComponentName = "front" if (os.environ.get("COMPONENT_NAME") == None) else os.environ.get("COMPONENT_NAME")
+print('Content-type: text/plain') # the mime-type header.
+print() # header must be separated from body by 1 empty line.
+
+status = '200 OK'
+response_body = [ '%s: %s' % (key, value) for key, value in sorted(os.environ.items())] 
+response_body = '\n'.join(response_body)
+print(response_body)

@@ -1,0 +1,40 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Ensure NFS utilities are installed.
+  apt:
+    name:
+      - nfs-common
+      - nfs-kernel-server
+    state: present
+
+- name: Ensure directories to export exist
+  file:
+    path: "{{ item.strip().split()[0] }}"
+    state: directory
+    owner: nobody
+    group: nogroup
+  when: inventory_hostname == groups['master'][0]
+  with_items: "{{ nfs_exports }}"
+
+- name: Copy exports file.
+  template:
+    src: exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+  when: inventory_hostname == groups['master'][0]
+  notify: reload nfs
+
+- name: Start NFS server
+  service: "name=nfs-kernel-server state=started enabled=yes"
+  when: inventory_hostname == groups['master'][0]
+
+- meta: flush_handlers
+

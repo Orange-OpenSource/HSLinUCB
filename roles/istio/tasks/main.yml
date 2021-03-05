@@ -1,0 +1,92 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Create istio directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /opt/istio
+    - /opt/helm
+
+- name: Untar istio
+  unarchive:
+    src: https://github.com/istio/istio/releases/download/1.6.12/istio-1.6.12-linux-amd64.tar.gz
+    dest: /opt/istio
+    remote_src: yes
+
+- name: Untar helm
+  unarchive:
+    src: https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz
+    dest: /opt/helm
+    remote_src: yes
+
+- name: Copy istioctl and helm binary to /usr/local/bin
+  copy:
+    src: "{{ item.src }}"
+    dest: "/usr/local/bin/{{ item.dest }}"
+    remote_src: yes
+    mode: 0755
+    owner: root
+    group: root
+  with_items:
+    - { src: "/opt/istio/istio-1.6.12/bin/istioctl", dest: "istioctl" }
+    - { src: "/opt/helm/linux-amd64/helm", dest: "helm" }
+    - { src: "/opt/helm/linux-amd64/tiller", dest: "tiller" }
+
+- name: Copy templates
+  template:
+    src: "{{ item }}"
+    dest: "/tmp/{{ item }}"
+  with_items:
+    - istio-namespace.yml
+    - kiali-secret.yml
+    - istio-install.yml
+#    - http-gateway.yml
+#    - https-gateway.yml
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create namespace istio-system
+  command: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/istio-namespace.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create kiali secret
+  command: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/kiali-secret.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Install Istio
+  command: "istioctl manifest apply -f /tmp/istio-install.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Wait for istio deployment
+  shell: kubectl get po -n istio-system | grep -i 'errimagepull\|pending\|failed\|Unknown\|CrashLoopBackOff\|Terminating\|ContainerCreating'
+  register: istio_status
+  failed_when: istio_status.attempts >= 59
+  until: istio_status.rc == 1
+  retries: 60
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Template zipkin-ui on kafka
+  template:
+    src: zipkin_ui.yml
+    dest: /tmp/zipkin-ui.yml
+  when: groups['master'][0] == inventory_hostname
+
+- name: Deploy zipkin-ui on kafka
+  shell: kubectl apply -f /tmp/zipkin-ui.yml
+  when: groups['master'][0] == inventory_hostname
+
+- name: Change environment variable on istio-tracing to enable kafka stream
+  shell: 'kubectl set env deploy istio-tracing -n istio-system KAFKA_FORWARDER_BOOTSTRAP_SERVERS="kafka-cp-kafka.kafka-system.svc.cluster.local:9092" KAFKA_FORWARDER_ENCODING="JSON" ZIPKIN_LOGGING_LEVEL="DEBUG"  STORAGE_METHOD- ZIPKIN_STORAGE_MEM_MAXSPANS-'
+  when: groups['master'][0] == inventory_hostname
+
+- name: Change container image on istio-tracing to enable kafka stream
+  shell: 'kubectl set image deploy istio-tracing -n istio-system *=openzipkincontrib/zipkin-storage-forwarder-kafka'
+  when: groups['master'][0] == inventory_hostname 

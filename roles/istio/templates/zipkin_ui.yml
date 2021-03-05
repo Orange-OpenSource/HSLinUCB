@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin-ui
+  namespace: istio-system
+  labels:
+    app: zipkin-ui
+    release: istio
+spec:
+  selector:
+    matchLabels:
+      app: zipkin-ui
+  template:
+    metadata:
+      labels:
+        app: zipkin-ui
+        release: istio
+      annotations:
+        sidecar.istio.io/inject: "false"
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+    spec:
+      containers:
+        - name: zipkin-ui
+          image: "docker.io/openzipkin/zipkin"
+          ports:
+            - containerPort: 9411
+          livenessProbe:
+            initialDelaySeconds: 200
+            tcpSocket:
+              port: 9411
+          readinessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              path: /health
+              port: 9411
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2048Mi
+            requests:
+              cpu: 150m
+              memory: 900Mi
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: QUERY_PORT
+              value: "9411"
+            - name: JAVA_OPTS
+              value: "-XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Xms700M -Xmx700M -XX:+UseG1GC -server"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka-cp-kafka.kafka-system.svc.cluster.local:9092
+            - name: ZIPKIN_LOGGING_LEVEL
+              value: DEBUG
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - "amd64"
+                - "ppc64le"
+                - "s390x"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - "amd64"
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - "ppc64le"
+          - weight: 2
+            preference:
+              matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - "s390x"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin-ui
+  namespace: istio-system
+  labels:
+    app: zipkin-ui
+    release: istio
+spec:
+  ports:
+    - port: 19411
+      targetPort: 9411
+      protocol: TCP
+      name: http-query
+  selector:
+    app: zipkin-ui

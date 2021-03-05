@@ -1,0 +1,10 @@
+{% if (groups['master'] is defined and inventory_hostname in groups['master']) or ( groups['worker'] is defined and inventory_hostname in groups['worker']) %}
+FLANNELD_ETCD_ENDPOINTS="{% for host in groups['master'] %}{% if loop.index > 1 %},{% endif %}https://{{ host|replace("_","-") }}.kubernetes:2379{% endfor %}"
+{% endif %}
+FLANNELD_ETCD_PREFIX="coreos.com/network/"
+FLANNELD_ETCD_CERTFILE="/etc/etcd/testbed-pf1.pem"
+FLANNELD_ETCD_KEYFILE="/etc/etcd/testbed-pf1-key.pem"
+FLANNELD_ETCD_CAFILE="/etc/etcd/ca.pem"
+FLANNELD_SUBNET_DIR="/var/lib/flanneld/network"
+FLANNELD_SUBNET_FILE="/var/lib/flanneld/subnet.env"
+FLANNEL_OPTIONS="-ip-masq"

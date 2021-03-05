@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+if [ -z "$1" ]
+then
+echo "You must specify container name or container id as first argument"
+echo "The next argument are the one for the tcpdump command"
+echo "Example: docker-tcpdump 12345456 -i any -s0 -A"
+echo "If you use the -w tcpdump option you have to store your capture file in /tmp. The capture will be available under your current directory"
+echo "Example: docker-tcpdump 12345456 -i any -w /tmp/my.pcap -s0 -A"
+exit 1
+else
+CONTAINER=$1
+shift
+CURRENTDIR=`pwd`
+echo "Starting tcpdump on container $CONTAINER with command: tcpdump $*"
+docker run --net=container:$CONTAINER -v $CURRENTDIR:/tmp {{ hostvars[groups['master'][0]].ansible_default_ipv4.address }}:5000/tcpdump:1 $*
+fi

@@ -1,0 +1,89 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Stop etcd before reset etcd cluster
+  systemd:
+    name: etcd
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']))) 
+  tags: [ 'reset_cluster' ]
+
+- name: Delete directory etcd
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/etc/etcd"
+    - "/opt/etcd"
+    - "/var/lib/etcd"
+    - "/etc/systemd/system/etcd.service"
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])))
+  tags: [ 'reset_cluster' ]
+
+- name: Create directory etcd
+  file: 
+    path: "{{ item }}"
+    state: directory
+  with_items: 
+    - "/etc/etcd"
+    - "/opt/etcd"
+    - "/var/lib/etcd"
+
+- name: Copy certificates to /etc/etcd for kubernetes
+  copy: 
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    dest: "/etc/etcd/{{ item }}"
+  with_items:
+    - "ca-config.json" 
+    - "ca.pem"
+    - "testbed-pf1.pem"
+    - "testbed-pf1-key.pem"
+
+- name: Get etcd binaries
+  get_url: 
+    url: "https://github.com/coreos/etcd/releases/download/v3.3.9/etcd-v3.3.9-linux-amd64.tar.gz"
+    dest: "/opt/etcd/etcd-v3.3.9-linux-amd64.tar.gz"
+
+- name: Unarchive etcd binaries
+  unarchive: 
+    src: "/opt/etcd/etcd-v3.3.9-linux-amd64.tar.gz"
+    dest: "/opt/etcd"
+    remote_src: yes
+
+- name: Create link etcd binaries
+  file: 
+    src: "/opt/etcd/etcd-v3.3.9-linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+  with_items:
+    - etcd
+    - etcdctl
+
+- name: Copy etcd.service template on first master instance in kubernetes
+  template:
+    src: "etcd.service.j2"
+    dest: "/etc/systemd/system/etcd.service"
+  when: inventory_hostname == groups['master'][0]
+
+- name: Start etcd on first master instance in kubernetes
+  systemd:
+    name: etcd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: (groups['master'] is defined and inventory_hostname == groups['master'][0])
+
+- name: Wait until Etcd started on first master instance in kubernetes
+  wait_for:
+    host: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    port: "2380"
+    timeout: 60
+  when: (groups['master'] is defined and inventory_hostname == groups['master'][0])

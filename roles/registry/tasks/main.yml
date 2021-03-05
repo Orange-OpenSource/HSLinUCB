@@ -1,0 +1,68 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Generate the registry certificate and private key
+  shell: 'openssl req -newkey rsa:4096 -nodes -sha256 -keyout registry.key -x509 -days 365 -out registry.crt -subj "/C=FR/ST=registry/L=None/O=Orange/CN={{ ansible_default_ipv4.address }}"'
+  args:
+    chdir: "/etc/kubernetes/"
+    creates: "registry.crt"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Extract registry certificate and convert it to base64
+  shell: "cat registry.crt | base64 -w0"
+  args:
+    chdir: "/etc/kubernetes/"
+  register: registry_certificate
+  when: groups['master'][0] == inventory_hostname
+
+- name: Extract registry private key and convert it to base64
+  shell: "cat registry.key | base64 -w0"
+  args:
+    chdir: "/etc/kubernetes/"
+  register: registry_key
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy registry templates
+  template:
+    src: "registry.yaml.j2"
+    dest: "/tmp/registry.yaml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: generate registry nfs pv configuration file
+  template:
+    src: registry-nfs-pv.yaml.j2
+    dest: /tmp/registry-nfs-pv.yaml
+
+- name: generate registry nfs pvc configuration file
+  template:
+    src: registry-nfs-pvc.yaml.j2
+    dest: /tmp/registry-nfs-pvc.yaml
+
+- name: Deploy registry nfs pv in kubernetes
+  shell: "kubectl apply -f /tmp/registry-nfs-pv.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Deploy registry nfs pvc in kubernetes
+  shell: "kubectl apply -f /tmp/registry-nfs-pvc.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create registry in kubernetes
+  shell: "kubectl apply -f /tmp/registry.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname

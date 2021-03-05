@@ -1,0 +1,2 @@
+---
+istio_scrape_interval: '30s'

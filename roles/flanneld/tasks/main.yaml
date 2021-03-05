@@ -1,0 +1,116 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Stop flanneld before reset cluster for kubernetes
+  systemd:
+    name: flanneld
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']))) 
+  tags: [ 'reset_cluster' ]
+
+- name: Remove flannel network interface
+  shell: ip link delete flannel.1
+  failed_when: false
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])))
+  tags: [ 'reset_cluster' ]
+
+- name: Remove cni network interface
+  shell: ip link delete cni0
+  failed_when: false
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])))
+  tags: [ 'reset_cluster' ]
+
+- name: Delete directory flannel
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/opt/flanneld"
+    - "/var/lib/flanneld"
+    - "/var/lib/cni/"
+    - "/run/flannel"
+    - "/etc/cni/net.d"
+    - "/etc/systemd/system/flanneld.service"
+    - "/etc/etcd"
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker'])))
+  tags: [ 'reset_cluster' ]
+
+- name: Create directory flanneld
+  file: 
+    path: "{{ item }}"
+    state: directory
+  with_items: 
+    - "/opt/flanneld"
+    - "/etc/cni/net.d"
+    - "/var/lib/flanneld/network"
+    - "/etc/etcd"
+  notify: "Restart flanneld"
+
+- name: Copy certificates to /etc/etcd for kubernetes
+  copy: 
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    dest: "/etc/etcd/{{ item }}"
+  with_items: 
+    - "ca.pem"
+    - "testbed-pf1.pem"
+    - "testbed-pf1-key.pem"
+
+- name: Unarchive flanneld binaries
+  unarchive: 
+    src: "https://github.com/coreos/flannel/releases/download/v0.13.0/flannel-v0.13.0-linux-amd64.tar.gz"
+    dest: "/opt/flanneld"
+    remote_src: yes
+
+- name: Create link flanneld binaries
+  file: 
+    src: "/opt/flanneld/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+  with_items:
+    - flanneld
+
+- name: Copy flanneld template
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ item.dest }}/{{ item.file }}"
+  with_items:
+    - { file: "flanneld", dest: /etc/default }
+    - { file: "flanneld.service", dest: "/etc/systemd/system" }
+  notify: "Restart flanneld"
+
+- name: Copy flanneld template
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ item.dest }}/{{ item.file }}"
+  with_items:
+    - { file: "10-flannel.conflist", dest: "/etc/cni/net.d" }
+
+- name:  Get current network configuration in etcd in kubernetes
+  shell:  "etcdctl --cert-file /etc/etcd/testbed-pf1.pem --key-file /etc/etcd/testbed-pf1-key.pem --ca-file /etc/etcd/ca.pem get /coreos.com/network/config '{\"Network\"}'"
+  when: (groups['master'] is defined and inventory_hostname == groups['master'][0])
+  register: etcdkey
+  changed_when: false
+  failed_when: "etcdkey.rc != 0 and etcdkey.rc != 4"
+
+- name:  Define flannel network configuration in etcd in kubernetes
+  shell:  "etcdctl --cert-file /etc/etcd/testbed-pf1.pem --key-file /etc/etcd/testbed-pf1-key.pem --ca-file /etc/etcd/ca.pem  mk /coreos.com/network/config '{\"Network\":\"10.9.0.0/16\", \"SubnetMin\": \"10.9.128.0\", \"SubnetMax\": \"10.9.250.0\", \"Backend\":{\"Type\":\"vxlan\"}}'"
+  when: (groups['master'] is defined and inventory_hostname ==  groups['master'][0]) and "Key not found" in etcdkey.stderr
+
+- name:  Update flannel network configuration in etcd if needed in kubernetes
+  shell:  "etcdctl --cert-file /etc/etcd/testbed-pf1.pem --key-file /etc/etcd/testbed-pf1-key.pem --ca-file /etc/etcd/ca.pem  update /coreos.com/network/config '{\"Network\":\"10.9.0.0/16\", \"SubnetMin\": \"10.9.128.0\", \"SubnetMax\": \"10.9.250.0\", \"Backend\":{\"Type\":\"vxlan\"}}'"
+  when: (groups['master'] is defined and inventory_hostname == groups['master'][0]) and '10.9.0.0/16' not in etcdkey.stdout
+
+- name: Start flanneld
+  systemd:
+    name: flanneld
+    state: started
+    enabled: yes
+    daemon_reload: yes

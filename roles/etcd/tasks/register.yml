@@ -1,0 +1,84 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Wait for a healthy etcd cluster on kubernetes
+  shell: 'etcdctl --cert-file=/etc/etcd/my-kube.pem --key-file=/etc/etcd/my-kube-key.pem --ca-file=/etc/etcd/ca.pem cluster-health'
+  failed_when: false
+  register: etcd_cluster_status
+  until: etcd_cluster_status.rc == 0
+  retries: 60
+  delay: 5
+  when: item == inventory_hostname and item != groups['master'][0]
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: Wait 5 seconds for a leader to be elected
+  pause:
+    seconds: 5
+
+- name: Wait for a leader to be elected in etcd cluster on kubernetes
+  shell: 'etcdctl --cert-file=/etc/etcd/my-kube.pem --key-file=/etc/etcd/my-kube-key.pem --ca-file=/etc/etcd/ca.pem member list | grep "isLeader=true"'
+  failed_when: false
+  register: etcd_leader_status
+  until: etcd_leader_status.rc == 0
+  retries: 60
+  delay: 5
+  when: item == inventory_hostname and item != groups['master'][0]
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: register other master instance in etcd on first kubernetes master instance
+  shell: "etcdctl --cert-file=/etc/etcd/my-kube.pem --key-file=/etc/etcd/my-kube-key.pem --ca-file=/etc/etcd/ca.pem member add etcd-{{ etcd_index }} https://{{ item | replace('_', '-') }}.kubernetes:2380"
+  register: member_add
+  failed_when: "member_add.rc == 1 and member_add.stderr != 'membership: peerURL exists'"
+  when: item == inventory_hostname and item != groups['master'][0]
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: define etcd cluster connection string
+  set_fact:
+    etcd_connection_string="{{ member_add.stdout_lines[3].split('\"')[1] }}"
+  when: item == inventory_hostname and item != groups['master'][0] and member_add.stdout_lines is defined and member_add.stdout_lines[3] is defined
+
+- name: Copy etcd.service template for initialization in kubernetes
+  template:
+    src: "etcd.service.j2"
+    dest: "/etc/systemd/system/etcd.service"
+  when: item == inventory_hostname and item != groups['master'][0]
+
+- name: Start etcd other master instance in kubernetes
+  systemd:
+    name: etcd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: inventory_hostname == item and item != groups['master'][0]
+
+- name: Wait until Etcd restarted on other master instance in kubernetes
+  wait_for:
+    host: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+    port: "2380"
+    timeout: 60
+  when: item == inventory_hostname and item != groups['master'][0]  
+
+- name: undefine etcd cluster connection string in kubernetes
+  set_fact:
+    etcd_connection_string=""
+  when: item == inventory_hostname and item != groups['master'][0]
+
+- name: Place final etcd.service template without initialization in kubernetes
+  template:
+    src: "etcd.service.j2"
+    dest: "/etc/systemd/system/etcd.service"
+  when: item == inventory_hostname and item != groups['master'][0]
+
+- name: Reload etcd service in kubernetes
+  systemd:
+    name: etcd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: item == inventory_hostname and item != groups['master'][0]

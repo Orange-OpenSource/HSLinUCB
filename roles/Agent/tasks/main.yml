@@ -1,0 +1,117 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: install utils
+  apt: package={{ item }} update_cache=yes
+  with_items:
+    - git
+    - dnsutils
+
+- name: Get anaconda install script
+  get_url:
+    url: https://repo.anaconda.com/archive/Anaconda3-2020.07-Linux-x86_64.sh
+    dest: /opt/Anaconda.sh
+    mode: 0755
+  register: anaconda
+
+- name: Install anaconda
+  shell: /opt/Anaconda.sh -b -p /opt/anaconda
+  when: anaconda.changed
+
+- name: Activate conda
+  shell: /opt/anaconda/bin/conda init
+  when: anaconda.changed
+
+- name: Update anaconda
+  shell: /opt/anaconda/bin/conda update -y conda
+  when: anaconda.changed
+
+- name: Install jupyterhub
+  shell: /opt/anaconda/bin/conda install -y -c conda-forge jupyterhub
+  when: anaconda.changed
+
+- name: Add jupyterlab user
+  user:
+    name: "{{ item.user.login }}"
+    shell: /bin/bash
+    password: "{{ item.user.password | password_hash('sha512') }}"
+  with_items: "{{ jupyterlab_account }}"
+
+- name: Add sudo right to jupyterlab user
+  template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ item.user.login }}-user"
+    mode: 0440
+    owner: root
+    group: root
+  with_items: "{{ jupyterlab_account }}"
+
+- name: create .kube dir
+  file:
+    path: ~{{ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: copy config file to HOME/.kube dir
+  copy:
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: ~{{ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    force: yes
+    mode: 0400
+
+- name: create .kube dir in root directory
+  file:
+    path: /root/.kube
+    state: directory
+    owner: "root"
+    group: "root"
+
+- name: copy config file to HOME/.kube in root directory
+  copy:
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: /root/.kube/config
+    owner: "root"
+    group: "root"
+    force: yes
+    mode: 0400
+
+- name: create .kube dir in jupyterlab user directory
+  file:
+    path: "/home/{{ item.user.login }}/.kube"
+    state: directory
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+
+- name: copy config file to HOME/.kube in jupyterlab user directory
+  copy:
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: "/home/{{ item.user.login }}/.kube/config"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+    force: yes
+    mode: 0400
+  with_items: "{{ jupyterlab_account }}"
+
+- name: Create jupyterhub configuration file
+  template:
+    src: jupyterhub_config.py
+    dest: /opt/jupyterhub_config.py
+  notify: restart jupyterhub
+
+- name: Create jupyterhub service
+  template:
+    src: jupyterhub.service
+    dest: /etc/systemd/system/jupyterhub.service
+  notify: restart jupyterhub
+
+- name: reload systemd
+  shell: systemctl daemon-reload

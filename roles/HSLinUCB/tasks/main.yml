@@ -1,0 +1,171 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Create agent environment
+  shell: /opt/anaconda/bin/conda create -y --name agent python=3.7.9
+
+- name: Install kafka-python
+  shell: /opt/anaconda/envs/agent/bin/pip install kafka-python==2.0.2
+
+- name: Install kafka-python in base
+  shell: /opt/anaconda/bin/pip install kafka-python==2.0.2
+
+- name: Install tensorflow
+  shell: /opt/anaconda/envs/agent/bin/pip install tensorflow==2.4.1
+
+- name: Install tensorflow in base
+  shell: /opt/anaconda/bin/pip install tensorflow==2.4.1
+
+- name: Install Keras
+  shell: /opt/anaconda/envs/agent/bin/pip install Keras==2.3.1
+
+- name: Install Keras in base
+  shell: /opt/anaconda/bin/pip install Keras==2.3.1
+
+- name: Install kubernetes-python
+  shell: /opt/anaconda/envs/agent/bin/pip install kubernetes==12.0.0
+
+- name: Install kubernetes-python in base
+  shell: /opt/anaconda/bin/pip install kubernetes==12.0.0
+
+- name: Install sdnotify-python
+  shell: /opt/anaconda/envs/agent/bin/pip install sdnotify==0.3.2
+
+- name: Install sdnotify-python in base
+  shell: /opt/anaconda/bin/pip install sdnotify==0.3.2
+
+- name: Install numpy-python
+  shell: /opt/anaconda/envs/agent/bin/pip install numpy==1.19.4
+
+- name: Install numpy-python in base
+  shell: /opt/anaconda/bin/pip install numpy==1.19.4
+
+- name: Install pandas-python
+  shell: /opt/anaconda/envs/agent/bin/pip install pandas==1.1.4
+
+- name: Install pandas-python in base
+  shell: /opt/anaconda/bin/pip install pandas==1.1.4
+
+- name: Install h5py
+  shell: /opt/anaconda/envs/agent/bin/pip install h5py==2.10.0
+
+- name: Install h5py in base
+  shell: /opt/anaconda/bin/pip install h5py==2.10.0
+
+- name: Retrieve prometheus component informations
+  shell: "kubectl get svc -n istio-system prometheus -o json"
+  register: prometheus_component_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- set_fact:
+    prometheus_component: "{{ prometheus_component_tmp.stdout|from_json }}"
+
+- name: Retrieve kafka component informations
+  shell: "kubectl get svc -n kafka-system kafka-external -o json"
+  register: kafka_component_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- set_fact:
+    kafka_component: "{{ kafka_component_tmp.stdout|from_json }}"
+
+- name: create orchestrator directory under /opt
+  file:
+    path: "/opt/orchestrator"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  notify: restart_orchestrator
+
+- name: Copy samples directory
+  copy:
+    src: "samples"
+    dest: "/home/{{ item.user.login }}/"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+
+- name: Copy real directory
+  copy:
+    src: "real"
+    dest: "/home/{{ item.user.login }}/"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+
+- name: Copy simulation directory
+  copy:
+    src: "simulation"
+    dest: "/home/{{ item.user.login }}/"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}" 
+
+- name: create lib directory under real
+  file:
+    path: "/home/{{ item.user.login }}/real/lib"
+    state: directory
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+  notify: restart_orchestrator
+
+- name: create lib directory under simulation
+  file:
+    path: "/home/{{ item.user.login }}/simulation/lib"
+    state: directory
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+  notify: restart_orchestrator
+
+- name: create lib directory under samples
+  file:
+    path: "/home/{{ item.user.login }}/samples/lib"
+    state: directory
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+  notify: restart_orchestrator
+
+- name: Generate cognitive orchestrator component
+  template:
+    src: "orchestrator.py"
+    dest: "/opt/orchestrator/orchestrator.py"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  notify: restart_orchestrator
+
+- name: Generate cognitive orchestrator service file
+  template:
+    src: "orchestrator.service"
+    dest: "/etc/systemd/system/orchestrator.service"
+  notify: restart_orchestrator
+
+- name: Generate cognitive library under simulation/lib
+  template:
+    src: "CogscalingLib.py"
+    dest: "/home/{{ item.user.login }}/simulation/lib/CogscalingLib.py"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+
+- name: Generate cognitive library under real/lib
+  template:
+    src: "CogscalingLib.py"
+    dest: "/home/{{ item.user.login }}/real/lib/CogscalingLib.py"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"
+
+- name: Generate cognitive library under sample/lib
+  template:
+    src: "CogscalingLib.py"
+    dest: "/home/{{ item.user.login }}/samples/lib/CogscalingLib.py"
+    owner: "{{ item.user.login }}"
+    group: "{{ item.user.login }}"
+  with_items: "{{ jupyterlab_account }}"

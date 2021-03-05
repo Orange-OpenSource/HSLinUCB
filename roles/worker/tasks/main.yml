@@ -1,0 +1,82 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Reset kubeadm before init in case this is not the first run
+  command: kubeadm reset -f
+  when: (CLEAN_CLUSTER is defined and groups['worker'] is defined and inventory_hostname in groups['worker'])
+  tags: [ 'reset_cluster' ]
+
+- name: Delete kubernetes directory before init in case CLEAN_CLUSTER is defined
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/kubernetes
+    - /var/lib/kubernetes
+    - /var/lib/kubelet
+  when: (CLEAN_CLUSTER is defined and groups['worker'] is defined and inventory_hostname in groups['worker'])
+  tags: [ 'reset_cluster' ]
+
+- name: create /etc/kubernetes
+  file:
+    path: /etc/kubernetes
+    state: directory
+
+- name: kubeadm join with pre generated token
+  shell: "kubeadm join --token tni46o.we8nbegt9uctd28t {{ hostvars[groups['master'][0]].ansible_default_ipv4.address }}:6443 --discovery-token-unsafe-skip-ca-verification > /etc/kubernetes/node-join.log"
+  args:
+    creates: /etc/kubernetes/node-join.log
+  when: groups['worker'] is defined and inventory_hostname in groups['worker']
+
+- name: create .kube dir
+  file:
+    path: ~{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: groups['worker'] is defined and inventory_hostname in groups['worker']
+
+- name: copy config file to HOME/.kube dir
+  copy: 
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: ~{{ ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    force: yes
+    mode: 0400
+  when: groups['worker'] is defined and inventory_hostname in groups['worker']
+
+- name: create /root/.kube dir
+  file:
+    path: /root/.kube
+    state: directory
+
+- name: copy config file to root/.kube dir
+  copy: 
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    force: yes
+    mode: 0400
+  when: groups['worker'] is defined and inventory_hostname in groups['worker']
+
+- name: Add label serverType
+  command: "kubectl label nodes {{ ansible_hostname }} serverType=worker --overwrite"
+
+- name: Update worker label
+  shell: "kubectl label node {{ ansible_hostname }} node-role.kubernetes.io/node= --overwrite"
+
+- name: Wait for flannel network deployment
+  shell: kubectl --kubeconfig admin.conf get po -n kube-system | grep -i 'errimagepull\|pending\|failed\|Unknown\|CrashLoopBackOff\|Terminating\|ContainerCreating'
+  register: flannel_status
+  failed_when: flannel_status.attempts >= 59
+  until: flannel_status.rc == 1
+  retries: 100
+  delay: 5

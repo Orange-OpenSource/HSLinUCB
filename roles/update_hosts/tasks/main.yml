@@ -1,0 +1,36 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Stop automatic update
+  shell: "systemctl stop {{ item }}"
+  loop:
+    - "apt-daily.timer"
+    - "apt-daily.service"
+    - "apt-daily-upgrade.timer"
+    - "apt-daily-upgrade.service"
+
+- name: Disable automatic update
+  shell: "systemctl disable {{ item }}"
+  loop:
+    - "apt-daily.timer"
+    - "apt-daily.service"
+    - "apt-daily-upgrade.timer"
+    - "apt-daily-upgrade.service"
+
+- name: update /etc/hosts
+  lineinfile:
+    dest: "/etc/hosts"
+    regexp: ".*{{ hostvars[item].ansible_hostname }}.kubernetes {{ hostvars[item].inventory_hostname }}.kubernetes {{hostvars[item].ansible_hostname }}$"
+    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}.kubernetes {{ hostvars[item].inventory_hostname }}.kubernetes {{hostvars[item].ansible_hostname }}"
+    state: present
+  when: hostvars[item].ansible_hostname is defined
+  with_items: "{{groups['all'] | default([])}}"
+
+- name: Setup
+  action: setup

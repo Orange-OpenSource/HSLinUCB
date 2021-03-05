@@ -1,0 +1,37 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: install transport-https
+  apt: package={{ item }} update_cache=yes
+  with_items:
+    - apt-transport-https
+
+- apt_key:
+    url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+    state: present
+
+- name: Add Kubernetes apt repo
+  apt_repository:
+    repo: 'deb http://apt.kubernetes.io/ kubernetes-xenial main'
+    filename: kubernetes
+    state: present
+
+- name: install kubeadm
+  apt: package={{ item }}  update_cache=yes
+  with_items:
+    - kubelet=1.19.3-00
+    - kubeadm=1.19.3-00
+    - kubectl=1.19.3-00
+  when: inventory_hostname in groups['master'] or inventory_hostname in groups['worker']
+
+- name: install kubectl
+  apt: package={{ item }} update_cache=yes
+  with_items:
+    - kubectl=1.19.3-00
+  when: (groups['agent'] is defined and inventory_hostname in groups['agent']) or (groups['stress'] is defined and inventory_hostname in groups['stress'])

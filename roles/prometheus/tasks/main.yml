@@ -1,0 +1,63 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Copy templates
+  template:
+    src: "{{ item }}"
+    dest: "/tmp/{{ item }}"
+  with_items:
+    - prometheus-namespace.yml
+    - prometheus-additional.yaml
+    - prometheus.yaml
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy istio grafana dashboard
+  copy:
+    src: "istio-grafana-dashboard.yaml"
+    dest: "/tmp/istio-grafana-dashboard.yaml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create namespace prometheus
+  command: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/prometheus-namespace.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create additionnal prometheus configuration secret template
+  shell: "kubectl --kubeconfig /etc/kubernetes/admin.conf create secret generic additional-scrape-configs -n istio-system --from-file=/tmp/prometheus-additional.yaml --dry-run -oyaml > /tmp/additional-scrape-configs.yaml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Create additionnal prometheus configuration secret
+  shell: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/additional-scrape-configs.yaml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Install prometheus
+  shell: "kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f /tmp/prometheus.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Remove grafana test pod
+  shell: "kubectl --kubeconfig /etc/kubernetes/admin.conf delete po prometheus-grafana-test -n istio-system"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Wait for Prometheus deployment
+  shell: kubectl --kubeconfig /etc/kubernetes/admin.conf get po -n istio-system | grep -i 'errimagepull\|pending\|failed\|Unknown\|CrashLoopBackOff\|Terminating\|ContainerCreating'
+  register: prometheus_status
+  failed_when: prometheus_status.attempts >= 59
+  until: prometheus_status.rc == 1
+  retries: 60
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Install node-exporter at VM level
+  apt: package={{ item }} update_cache=yes
+  when: inventory_hostname not in groups['master'] and inventory_hostname not in groups['worker']
+  with_items:
+    - prometheus-node-exporter

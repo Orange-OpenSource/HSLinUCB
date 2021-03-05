@@ -1,0 +1,77 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Copy kafka namespace template
+  copy:
+    src: "kafka-namespace.yml"
+    dest: "/tmp/kafka-namespace.yml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy kafka templates
+  template:
+    src: "kafka.yaml.j2"
+    dest: "/tmp/kafka.yaml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Copy kafka-client templates
+  copy:
+    src: "kafka-client.yaml"
+    dest: "/tmp/kafka-client.yaml"
+  when: groups['master'][0] == inventory_hostname
+
+- name: Apply kafka namespace template
+  shell: "kubectl apply -f /tmp/kafka-namespace.yml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Apply kafka template
+  shell: "kubectl apply -f /tmp/kafka.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Wait for kafka deployment
+  shell: kubectl get po -n kafka-system | grep -i 'errimagepull\|pending\|failed\|Unknown\|CrashLoopBackOff\|Terminating\|ContainerCreating'
+  register: kafka_status
+  failed_when: kafka_status.attempts >= 59
+  until: kafka_status.rc == 1
+  retries: 60
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Apply kafka-client templates
+  shell: "kubectl apply -f /tmp/kafka-client.yaml"
+  register: task_result
+  until: task_result.rc == 0
+  retries: 10
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+- name: Wait for kafka-client deployment
+  shell: kubectl get po -n kafka-system | grep -i 'errimagepull\|pending\|failed\|Unknown\|CrashLoopBackOff\|Terminating\|ContainerCreating'
+  register: kafka_client_status
+  failed_when: kafka_client_status.attempts >= 59
+  until: kafka_client_status.rc == 1
+  retries: 60
+  delay: 5
+  when: groups['master'][0] == inventory_hostname
+
+#- name: Create metrics kafka topics
+#  shell: "kubectl exec -it kafka-client -n kafka-system -- kafka-topics --if-not-exists --zookeeper kafka-cp-zookeeper:2181 --create --topic metrics --partitions 6 --replication-factor 1"
+#  when: groups['platform + master_group_name][0] == inventory_hostname
+
+#- name: Create actions kafka topics
+#  shell: "kubectl exec -it kafka-client -n kafka-system -- kafka-topics --if-not-exists --zookeeper kafka-cp-zookeeper:2181 --create --topic actions --partitions 6 --replication-factor 1"
+#  when: groups[platform + master_group_name][0] == inventory_hostname
+

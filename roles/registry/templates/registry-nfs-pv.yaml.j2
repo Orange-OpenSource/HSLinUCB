@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  # any PV name
+  name: registry-nfs-pv
+  namespace: kube-system
+  labels:
+    volume: registry-nfs-pv-volume
+spec:
+  capacity:
+    # storage size
+    storage: 2Gi
+  accessModes:
+    # ReadWriteMany(RW from multi nodes), ReadWriteOnce(RW from a node), ReadOnlyMany(R from multi nodes)
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy:
+    # retain even if pods terminate
+    Retain
+  nfs:
+    # NFS server's definition
+    path: /registry
+    server: {{hostvars[groups['master'][0]].ansible_default_ipv4.address}}
+    readOnly: false

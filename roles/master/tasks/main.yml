@@ -1,0 +1,181 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Reset kubeadm before init in case CLEAN_CLUSTER is defined
+  command: kubeadm reset -f
+  when: (CLEAN_CLUSTER is defined and groups['master'] is defined and inventory_hostname in groups['master']) 
+  tags: [ 'reset_cluster' ]
+
+- name: Delete kubernetes directory before init in case CLEAN_CLUSTER is defined for kubernetes cluster
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/kubernetes
+    - /var/lib/kubernetes
+    - /var/lib/kubelet
+  when: (CLEAN_CLUSTER is defined and ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']))) 
+  tags: [ 'reset_cluster' ]
+
+- name: Create directory kubernetes
+  file:
+    path: "{{ item }}"
+    state: directory
+  when: ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']))
+  with_items:
+    - /etc/kubernetes/steps
+    - /var/lib/kubernetes
+
+- name: Copy template kube config file
+  template:
+    src: "config.yaml.j2"
+    dest: "/etc/kubernetes/config.yaml"
+    mode: 0600
+  when: ((groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']))
+
+- name: kubeadm init first master node in kubernetes
+  shell: "kubeadm init --config=config.yaml > steps/kubeadm-init.log && chmod 600 steps/kubeadm-init.log" 
+  args:
+    chdir: /etc/kubernetes
+    creates: steps/kubeadm-init.log
+  when: (groups['master'] is defined and groups['master'][0] == inventory_hostname)
+
+- name: wait for kubernetes to become active.
+  wait_for:
+    port: 6443
+    delay: 10
+    timeout: 300
+  when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
+
+- name: Remove kubernetes token
+  shell: "kubeadm --kubeconfig admin.conf token delete tni46o.we8nbegt9uctd28t"
+  failed_when: false
+  args:
+    chdir: /etc/kubernetes
+  when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
+
+- name: Recreate kubernetes token
+  shell: "kubeadm --kubeconfig admin.conf token create tni46o.we8nbegt9uctd28t"
+  args:
+    chdir: /etc/kubernetes
+  when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
+
+- name: Deploying the flannel overlay network in kubernetes
+  shell: "kubectl --kubeconfig admin.conf apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml > steps/network_overlay.log"
+  args:
+    chdir: /etc/kubernetes
+    creates: steps/network_overlay.log
+  when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
+
+- name: Wait for flannel network deployment in kubernetes
+  shell: kubectl --kubeconfig admin.conf get po -n kube-system | grep -i 'errimagepull\|pending\|failed\|Unknown\|CrashLoopBackOff\|Terminating\|ContainerCreating'
+  register: flannel_status
+  failed_when: flannel_status.attempts >= 59
+  until: flannel_status.rc == 1
+  retries: 100
+  delay: 5
+  when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
+
+- name: allow permissive RBAC rules in kubernetes
+  shell: "kubectl --kubeconfig admin.conf create clusterrolebinding permissive-binding \
+  --clusterrole=cluster-admin \
+  --user=admin \
+  --user=kubelet \
+  --group=system:serviceaccounts > create_role_cluster-admin.log"
+  args:
+    chdir: /etc/kubernetes
+    creates: create_role_cluster-admin.log
+  when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
+
+- name: Fetch kubernetes pki certificates in kubernetes
+  fetch:
+    src: "/etc/kubernetes/pki/{{ item }}"
+    dest: "files.pf1_myProject_myCloud_noRegion_myNet/testbed-pf1/pki/{{ item }}"
+    flat: yes
+  when: groups['master'][0] == inventory_hostname
+  with_items:
+    - "apiserver-kubelet-client.crt"
+    - "apiserver-kubelet-client.key"
+    - "ca.crt"
+    - "ca.key"
+    - "front-proxy-ca.crt"
+    - "front-proxy-ca.key"
+    - "front-proxy-client.crt"
+    - "front-proxy-client.key"
+    - "sa.key"
+    - "sa.pub"
+
+- name: Copy kubernetes pki certificates to other master in kubernetes
+  copy:
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/testbed-pf1/pki"
+    dest: "/etc/kubernetes"
+    mode: "preserve"
+  when: groups['master'][0] != inventory_hostname and inventory_hostname in groups['master']
+  tags: ['sync']
+
+- name: kubeadm init other master nodes in kubernetes
+  shell: "kubeadm init --config=config.yaml > kubeadm-init.log && chmod 600 kubeadm-init.log"
+  args:
+    chdir: /etc/kubernetes
+    creates: kubeadm-init.log
+  when: ( groups['master'] is defined and inventory_hostname != groups['master'][0] and inventory_hostname in groups['master'] )
+
+- name: wait for kubernetes to become active in kubernetes
+  wait_for:
+    port: 6443
+    delay: 10
+    timeout: 300
+  when: ( groups['master'] is defined and inventory_hostname != groups['master'][0] and inventory_hostname in groups['master'] )
+
+- name: Add label serverType
+  command: "kubectl --kubeconfig /etc/kubernetes/admin.conf label nodes {{ ansible_hostname }} serverType=master --overwrite"
+  when: inventory_hostname in groups['master']
+
+- name: create .kube dir
+  file:
+    path: ~{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: inventory_hostname in groups['master']
+
+- name: copy config file to HOME/.kube dir
+  copy: 
+    src: /etc/kubernetes/admin.conf
+    dest: ~{{ ansible_user }}/.kube/config
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    force: yes
+    mode: 0400
+  when: inventory_hostname in groups['master']
+
+- name: create /root/.kube dir
+  file:
+    path: /root/.kube
+    state: directory
+  when: inventory_hostname in groups['master']
+
+- name: copy config file to root/.kube dir
+  copy: 
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    remote_src: yes
+    owner: root
+    group: root
+    force: yes
+    mode: 0400
+  when: inventory_hostname in groups['master']
+
+- name: Fetch admin file
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    flat: yes
+  when: groups['master'][0] == inventory_hostname

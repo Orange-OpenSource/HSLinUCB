@@ -1,0 +1,126 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: install utils
+  apt: package={{ item }} update_cache=yes
+  with_items:
+    - git
+    - dnsutils
+
+- name: Get anaconda install script
+  get_url:
+    url: https://repo.anaconda.com/archive/Anaconda3-2020.07-Linux-x86_64.sh
+    dest: /opt/Anaconda.sh
+    mode: 0755
+  register: anaconda
+
+- name: Install anaconda
+  shell: /opt/Anaconda.sh -b -p /opt/anaconda
+  when: anaconda.changed
+
+- name: Activate conda
+  shell: /opt/anaconda/bin/conda init
+  when: anaconda.changed
+
+- name: Update anaconda
+  shell: /opt/anaconda/bin/conda update -y conda
+  when: anaconda.changed
+
+- name: create .kube dir
+  file:
+    path: ~{{ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: copy config file to HOME/.kube dir
+  copy:
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: ~{{ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    force: yes
+    mode: 0400
+
+- name: create .kube dir in root directory
+  file:
+    path: /root/.kube
+    state: directory
+    owner: "root"
+    group: "root"
+
+- name: copy config file to HOME/.kube in root directory
+  copy:
+    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: /root/.kube/config
+    owner: "root"
+    group: "root"
+    force: yes
+    mode: 0400
+
+- name: Create locust environment
+  shell: "/opt/anaconda/bin/conda create -y --name locust python=3.6"
+
+- name: Install locust
+  shell: "/opt/anaconda/envs/locust/bin/pip install locust==1.4.1"
+
+- name: Install kafka-python
+  shell: "/opt/anaconda/envs/locust/bin/pip install kafka-python==2.0.2"
+
+- name: Retrieve istio ingress gateway informations
+  shell: "kubectl get svc -n istio-system istio-ingressgateway -o json | jq .spec.ports"
+  register: ingress_gateway_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: register istio ingress port
+  set_fact:
+    ingress_gateway_port: "{{ item.nodePort }}"
+  when: item.name == 'http2'
+  with_items: "{{ ingress_gateway_tmp.stdout | from_json }}"
+
+- name: Retrieve kafka component informations
+  shell: "kubectl get svc -n kafka-system kafka-external -o json"
+  register: kafka_component_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- set_fact:
+    kafka_component: "{{ kafka_component_tmp.stdout|from_json }}"
+
+- name: Install load locust file
+  template:
+    src: locustfile.py
+    dest: /root/locustfile.py
+  notify: restart_locust
+
+- name: Install backend file for kafka stream
+  template:
+    src: backend_base.py
+    dest: /root/backend_base.py
+  notify: restart_locust
+
+- name: Install kafka python stream lib
+  template:
+    src: kafkaimpl.py
+    dest: /root/kafkaimpl.py
+  notify: restart_locust
+
+- name: Create locust service
+  template:
+    src: locust.service
+    dest: /etc/systemd/system/locust.service
+  notify: restart_locust
+
+- name: update /etc/hosts
+  lineinfile:
+    dest: "/etc/hosts"
+    regexp: ".*{{hostvars[groups['master'][0]].ansible_default_ipv4.address}} dynamic-component.service.pf1$"
+    line: "{{hostvars[groups['master'][0]].ansible_default_ipv4.address}} dynamic-component.service.pf1"
+    state: present
+
+- name: reload systemd
+  shell: systemctl daemon-reload

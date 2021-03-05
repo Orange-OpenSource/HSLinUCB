@@ -1,0 +1,25 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: restart_locust
+  service:
+    name: locust.service
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  when: inventory_hostname == groups['stress'][0]
+  notify: "restart_locust_worker"
+
+- name: restart_locust_worker
+  service:
+    name: locust.service
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  when: inventory_hostname != groups['stress'][0]
+  listen: "restart_locust"

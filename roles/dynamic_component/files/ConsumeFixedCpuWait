@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+from random import uniform
+import time
+import os
+import math
+import requests
+from cgi import parse_qs
+
+print('Content-type: text/plain') # the mime-type header.
+print() # header must be separated from body by 1 empty line.
+ComponentName = "front" if (os.environ.get("COMPONENT_NAME") == None) else os.environ.get("COMPONENT_NAME")
+
+start = time.time()
+i = 0
+array = []
+argument = parse_qs(os.environ['QUERY_STRING'])
+max = int(argument.get('cpu',[0])[0]) * 1000
+max_wait = float(argument.get('wait',[0])[0])/1000
+while (i < max):
+    array.append(i)
+    i += 1
+    array.pop()
+stop = time.time()
+job_time = stop - start
+if (max_wait - job_time > 0):
+    time.sleep(max_wait - job_time)
+    print("Job time:" + str(max_wait) + " by " + ComponentName)
+else:
+    print("Job time:" + str(job_time) + " by " + ComponentName)

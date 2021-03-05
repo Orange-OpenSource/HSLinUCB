@@ -1,0 +1,59 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Create tuning tools directory
+  file:
+    path: "~/tuning_tools"
+    state: directory
+
+- name: Retrieve istio ingress gateway informations
+  shell: "kubectl get svc -n istio-system istio-ingressgateway -o json"
+  register: ingress_gateway_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- set_fact:
+    ingress_gateway: "{{ ingress_gateway_tmp.stdout|from_json }}"
+
+- name: Retrieve istio ingress gateway port informations
+  shell: "kubectl get svc -n istio-system istio-ingressgateway -o json | jq .spec.ports"
+  register: ingress_gateway_port_tmp
+#  when: use_consul
+  delegate_to: "{{ groups['master'][0] }}"
+
+- name: register istio ingress port
+  set_fact:
+    ingress_gateway_port: "{{ item.nodePort }}"
+  when: item.name == 'http2'
+  with_items: "{{ ingress_gateway_port_tmp.stdout | from_json }}"
+
+- name: Retrieve zipkin informations
+  shell: "kubectl get svc -n istio-system zipkin -o json"
+  register: zipkin_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- set_fact:
+    zipkin: "{{ zipkin_tmp.stdout|from_json }}"
+
+- name: Copy tuning tools
+  template:
+    src: "{{ item }}"
+    dest: "~/tuning_tools/{{ item }}"
+    mode: 0777
+  with_items:
+    - call_front_time.py
+    - call_front_size.py
+    - call_front_consumeFixedCpu.py
+    - call_front_consumeFixedCpuWait.py
+    - call_back_time.py
+    - call_back_size.py
+    - call_back_consumeFixedCpu.py
+    - get_one_span_trace.sh
+    - call_back2_time_parallel.py
+    - call_back2_time_serial.py
+    - call_back_time_wait.py
+    - complex_call.sh

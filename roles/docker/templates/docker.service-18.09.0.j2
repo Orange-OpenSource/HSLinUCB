@@ -1,0 +1,60 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+BindsTo=containerd.service
+After=network-online.target firewalld.service flanneld.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+# the default is not to use systemd for cgroups because the delegate issues still
+# exists and systemd currently does not support the cgroup feature set required
+# for containers run by docker
+EnvironmentFile=-/var/lib/flanneld/subnet.env
+Environment="NO_PROXY=localhost,{{hostvars[groups['master'][0]].ansible_default_ipv4.address}},{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:5000,127.0.0.0/8,{{ openstack_network }},10.0.0.0/8,10.96.0.0/12,10.9.0.0/16,.kubernetes:2379,.istio-system.svc,.kafka-system.svc"
+{% if groups['agent'] is not defined or (groups['agent'] is defined and inventory_hostname not in groups['agent'] ) %}
+ExecStart=/usr/bin/dockerd -H unix:// --bip=${FLANNEL_SUBNET} --mtu=${FLANNEL_MTU} --insecure-registry {{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:5000
+{% else %}
+ExecStart=/usr/bin/dockerd -H unix://
+{% endif %}
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutSec=0
+RestartSec=2
+Restart=always
+
+# Note that StartLimit* options were moved from "Service" to "Unit" in systemd 229.
+# Both the old, and new location are accepted by systemd 229 and up, so using the old location
+# to make them work for either version of systemd.
+StartLimitBurst=3
+
+# Note that StartLimitInterval was renamed to StartLimitIntervalSec in systemd 230.
+# Both the old, and new name are accepted by systemd 230 and up, so using the old name to make
+# this option work for either version of systemd.
+StartLimitInterval=60s
+
+# Having non-zero Limit*s causes performance problems due to accounting overhead
+# in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+
+# Comment TasksMax if your systemd version does not supports it.
+# Only systemd 226 and above support this option.
+TasksMax=infinity
+
+# set delegate yes so that systemd does not reset the cgroups of docker containers
+Delegate=yes
+
+# kill only the docker process, not all processes in the cgroup
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

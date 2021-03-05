@@ -1,0 +1,31 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  profile: default
+  values:
+    global:
+      #controlPlaneSecurityEnabled: false
+      #mtls:
+      #  enabled: false
+      proxy:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "while [ $(netstat -punt | grep -v envoy | grep -v pilot | grep ESTABLISHED | wc -l | xargs) -ne 0 ]; do echo 'WAITING FOR ESTABLISHED CONNECTION TO FINISH'; sleep 1; done"]
+      imagePullPolicy:
+        IfNotPresent
+      meshExpansion:
+        enabled: true
+    prometheus:
+      enabled: false
+    tracing:
+      enabled: true
+      provider: zipkin
+    kiali:
+      enabled: true
+    grafana:
+      enabled: false
+    prometheus:
+      enabled: false
+    pilot:
+      traceSampling: 100

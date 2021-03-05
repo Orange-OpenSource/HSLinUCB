@@ -1,0 +1,102 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Get cfssl binaries
+  get_url: 
+    url: https://pkg.cfssl.org/R1.2/{{ item.src_file }}
+    dest: /usr/local/bin/{{ item.dest_file }}
+    mode: 0755
+  with_items: 
+    - { src_file: "cfssl_linux-amd64", dest_file: "cfssl" }
+    - { src_file: "cfssljson_linux-amd64", dest_file: "cfssljson" }
+
+- name: Copy template to generate certs
+  template: 
+    src: "{{ item.src }}"
+    dest: "~/{{ item.dest }}"
+  with_items: 
+    - { src: "ca-config.json.j2", dest: "ca-config.json" }
+    - { src: "ca-csr.json.j2", dest: "ca-csr.json" }
+
+- name: Copy kubernetes csr template
+  template:
+    src: "kubernetes-csr.json.j2"
+    dest: "~/kubernetes-csr.json"
+  register: generate_cert
+
+- name: Check if certificate file is already available locally
+  stat:
+    path: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+  register: certificate_file_check
+  delegate_to: localhost
+  become: false
+  with_items:
+    - "ca-config.json"
+    - "ca.csr"
+    - "ca.pem"
+    - "ca-key.pem"
+    - "testbed-pf1.csr"
+    - "testbed-pf1.pem"
+    - "testbed-pf1-key.pem"
+
+- name: Restore the certificate authority and private key for kubernetes
+  copy:
+    src: "{{ item.stat.path }}"
+    dest: "~/{{ item.item }}"
+  when: item.stat.exists == true and inventory_hostname in groups['master']
+  with_items: '{{ certificate_file_check.results }}'
+
+- name: Generate the certificate authority and private key
+  shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
+  args: 
+    chdir: "~/"
+    creates: "ca.pem"
+  when: inventory_hostname in groups['master']
+
+- name: Generate the certificate and private key
+  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=testbed-pf1 kubernetes-csr.json | cfssljson -bare testbed-pf1"
+  when: generate_cert.changed and inventory_hostname in groups['master']
+  args: 
+    chdir: "~/"
+
+- name: Change right on private key
+  file:
+    path: "~/{{ item }}"
+    mode: 0600
+    state: file
+  with_items:
+    - "ca-key.pem"
+
+- name: Check if kubernetes private key is available
+  stat:
+    path: "testbed-pf1-key.pem"
+  register: kubernetes_private_key_check
+
+- name: Change right on kubernetes private key
+  file:
+    path: "~/{{ item }}"
+    mode: 0600
+    state: file
+  when: kubernetes_private_key_check.stat.exists == true
+  with_items:
+    - "testbed-pf1-key.pem"
+
+- name: Fetch certificats and store into files for kubernetes
+  fetch: 
+    src: "~/{{ item }}"
+    dest: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    flat: yes
+  with_items:
+    - "ca-config.json"
+    - "ca.csr"
+    - "ca.pem"
+    - "ca-key.pem"
+    - "testbed-pf1.csr"
+    - "testbed-pf1.pem"
+    - "testbed-pf1-key.pem"

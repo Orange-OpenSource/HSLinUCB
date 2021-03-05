@@ -1,0 +1,119 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Update host and configure NTP on kubernetes instance
+  hosts:
+    - "master1"
+    - "worker"
+    - "stress"
+    - "agent"
+  become: true
+  become_method: sudo
+  gather_facts: true
+  roles:
+    - { role: update_hosts }
+    - { role: ntp }
+    - { role: common }
+    - { role: NfsServer }
+
+- name: Generate Cluster certificats
+  hosts:
+    - "master1"
+  become: true
+  become_method: sudo
+  gather_facts: True
+  roles:
+    - { role: cfssl }
+
+- name: Install Kubernetes master
+  hosts:
+    - "master1"
+  gather_facts: True
+  become: true
+  become_method: sudo
+  roles:
+    - { role: etcd }
+    - { role: flanneld }
+    - { role: docker }
+    - { role: kubeadm }
+    - { role: master }
+    - { role: registry }
+    - { role: kubeMetricServer }
+
+- name: Install worker
+  hosts:
+    - "worker"
+  gather_facts: True
+  become: true
+  become_method: sudo
+  roles:
+    - { role: flanneld }
+    - { role: docker }
+    - { role: kubeadm }
+    - { role: worker }
+
+- name: Install Kubernetes kafka, istio and prometheus
+  hosts: "master1"
+  gather_facts: True
+  become: true
+  become_method: sudo
+  roles:
+    - { role: kafka }
+    - { role: istio }
+    - { role: prometheus }
+
+- name: Deploy application component
+  hosts: "master1"
+  gather_facts: True
+  become: true
+  become_method: sudo
+  roles:
+    - { role: dynamic_component}
+
+- name: Install prometheus node-exporter on all VM
+  hosts:
+    - "stress"
+    - "agent"
+  become: true
+  become_method: sudo
+  gather_facts: True
+  roles:
+    - { role: prometheus }
+
+- name: Deploy tools
+  hosts:
+    - "master1"
+    - "worker"
+    - "stress"
+    - "agent"
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  roles:
+    - { role: docker_tcpdump }
+    - { role: tuning_tools }
+
+- name: Install agent
+  hosts: "agent"
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  roles:
+    - { role: Agent }
+    - { role: kubeadm }
+    - { role: HSLinUCB}
+
+- name: Install stress
+  hosts: "stress"
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  roles:
+    - { role: kubeadm}
+    - { role: locust}

@@ -1,0 +1,6 @@
+#Flask==1.0.2
+#gunicorn==19.9.0
+requests==2.21.0
+#jaeger-client==3.11.0
+#opentracing-instrumentation==2.4.3
+kubernetes

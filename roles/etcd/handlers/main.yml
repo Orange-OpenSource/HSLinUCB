@@ -1,0 +1,22 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Restart etcd
+  systemd:
+    name: etcd
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+    
+- name: Wait until Etcd restarted
+  wait_for:
+    host: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    port: "2380"
+    timeout: 60
+  listen: "Restart etcd"

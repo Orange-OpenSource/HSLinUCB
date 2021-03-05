@@ -1,0 +1,42 @@
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos
+
+[Service]
+ExecStart=/usr/local/bin/etcd \
+{% if (groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']) %}
+  --name etcd-{% for host in groups['master'] %}{% if host == inventory_hostname %}{{ loop.index -1 }}{% endif %}{% endfor %} \
+{% endif %}
+  --cert-file=/etc/etcd/testbed-pf1.pem \
+  --key-file=/etc/etcd/testbed-pf1-key.pem \
+  --peer-cert-file=/etc/etcd/testbed-pf1.pem \
+  --peer-key-file=/etc/etcd/testbed-pf1-key.pem \
+  --trusted-ca-file=/etc/etcd/ca.pem \
+  --peer-trusted-ca-file=/etc/etcd/ca.pem \
+  --peer-client-cert-auth \
+  --client-cert-auth \
+  --initial-advertise-peer-urls https://{{ ansible_hostname }}.kubernetes:2380 \
+  --listen-peer-urls https://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:2380 \
+  --listen-client-urls https://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls https://{{ ansible_hostname }}.kubernetes:2379 \
+  --initial-cluster-token etcd-cluster-0 \
+{% if (groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']) %}
+{% if inventory_hostname == groups['master'][0]%}
+  --initial-cluster etcd-0=https://{{ inventory_hostname | replace('_', '-') }}.kubernetes:2380 \
+  --initial-cluster-state new \
+{% else %}
+{% if etcd_connection_string is defined and etcd_connection_string != ''%}
+  --initial-cluster {{ etcd_connection_string }} \
+  --initial-cluster-state existing \
+{% else %}
+  --initial-cluster {% for host in groups['master'] %}{% if loop.index > 1 %},{% endif %}etcd-{{ loop.index - 1 }}=https://{{ host|replace("_","-") }}.kubernetes:2380{% endfor %} \
+  --initial-cluster-state new \
+{% endif %}
+{% endif %}
+{% endif %}
+  --data-dir=/var/lib/etcd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
