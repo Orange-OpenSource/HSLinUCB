@@ -1,8 +1,8 @@
 # Environment installation
 
-A complete Ansible playbook and roles is available for a complete environement installation on a real Cloud platform.
+An Ansible playbook and roles is available for a complete environment installation on a real Cloud platform.
 
-For environment installation you need 7 virtual machine with the following specs:
+For environment installation you need 7 virtual machines with the following specs:
 
 Agent: 4 VCPU/16 GB RAM/40GB storage
 
@@ -12,7 +12,7 @@ Kubernetes 1&2&3&4: 8VCPU/16 GB RAM/40 GB storage
 
 This installation procedure has been only tested on: Debian 9
 
-This installation procedure does not create the virtual machines but integration is planned. 
+This installation procedure does not create the virtual machines but it is planned. 
 
 ## Environment and installation constraints
 
@@ -108,3 +108,5 @@ Once the installation finished you can access the jupyterlabs interface on:
 http://<agent1 internet address>::8000/hubagent/hub/login
 
 The locust injector interface is available with a browser on the stress server on port 8089
+
+kubectl command is available on every virtual machines
