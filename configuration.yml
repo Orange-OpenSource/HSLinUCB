@@ -48,8 +48,8 @@ external_authorized_ip: ["1.2.3.4/32","5.6.7.8/32"]
 external_http_proxy: "http://myproxy:8080"
 
 # AGENT VM SETTINGS
-#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
-agent_image: "< Debian 9 or Ubuntu 18_04 system image name or id>"
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04 or Ubuntu 20_04
+agent_image: "< Debian 9 or Ubuntu 18_04/20_04 system image name or id>"
 
 #Place here the flavor to use for virtual machine creation. A flavor with 4Vcpu/16GB RAM and 40GB storage is a good compromise
 agent_flavor: "<flavor with 4Vcpu/16GBRam>"
@@ -61,8 +61,8 @@ agent_count: 1
 agent_remote_user: "cloud"
 
 # STRESS VM SETTINGS
-#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
-stress_image: "<Debian 9 or Ubuntu 18_04 system image name or id>"
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04 or Ubuntu 20_04
+stress_image: "<Debian 9 or Ubuntu 18_04/20_04 system image name or id>"
 
 #Place here the flavor to use for virtual machine creation. A flavor with 4Vcpu/4GB RAM and 40GB storage is a good compromise
 stress_flavor: "<flavor with 4Vcpu/4GBRam>"
@@ -74,8 +74,8 @@ stress_count: 2
 stress_remote_user: "cloud"
 
 # KUBERNETES VM SETTINGS
-#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
-master_image: "<Debian 9 or Ubuntu 18_04 system image name or id>"
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04 or Ubuntu 20_04
+master_image: "<Debian 9 or Ubuntu 18_04/20_04 system image name or id>"
 
 #Place here the flavor to use for virtual machine creation. A flavor with 8Vcpu/16GB RAM and 40GB storage is a good compromise
 master_flavor: "<flavor with 8Vcpu/16GBRam>"
@@ -86,8 +86,8 @@ master_count: 1
 #Place here the ssh user login used to connected on the virtual machine (the user login is cloud provider/system dependant)
 master_remote_user: "cloud"
 
-#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
-worker_image: "<Debian 9 or Ubuntu 18_04 system image name or id>"
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04 or Ubuntu 20_04
+worker_image: "<Debian 9 or Ubuntu 18_04/20_04 system image name or id>"
 
 #Place here the flavor to use for virtual machine creation. A flavor with 8Vcpu/16GB RAM and 40GB storage is a good compromise
 worker_flavor: "<flavor with 8Vcpu/16GBRam>"
