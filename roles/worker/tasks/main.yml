@@ -44,7 +44,7 @@
 
 - name: copy config file to HOME/.kube dir
   copy: 
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: ~{{ ansible_user }}/.kube/config
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
@@ -59,7 +59,7 @@
 
 - name: copy config file to root/.kube dir
   copy: 
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: /root/.kube/config
     owner: root
     group: root

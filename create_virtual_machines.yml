@@ -1,0 +1,21 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+- name: Create openstack environment
+  gather_facts: false
+  become: false
+  hosts: localhost
+  roles:
+    - { role: CreateKeyPair }
+    - { role: CreateNetworks }
+    - { role: openstack-security-groups }
+    - { role: openstack-master }
+    - { role: openstack-agent }
+    - { role: openstack-stress }
+    - { role: openstack-worker }
+

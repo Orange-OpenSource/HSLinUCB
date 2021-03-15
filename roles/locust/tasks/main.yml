@@ -11,6 +11,9 @@
   with_items:
     - git
     - dnsutils
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Get anaconda install script
   get_url:
@@ -18,18 +21,30 @@
     dest: /opt/Anaconda.sh
     mode: 0755
   register: anaconda
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install anaconda
   shell: /opt/Anaconda.sh -b -p /opt/anaconda
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Activate conda
   shell: /opt/anaconda/bin/conda init
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Update anaconda
   shell: /opt/anaconda/bin/conda update -y conda
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: create .kube dir
   file:
@@ -40,7 +55,7 @@
 
 - name: copy config file to HOME/.kube dir
   copy:
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: ~{{ansible_user }}/.kube/config
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
@@ -56,7 +71,7 @@
 
 - name: copy config file to HOME/.kube in root directory
   copy:
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: /root/.kube/config
     owner: "root"
     group: "root"
@@ -65,12 +80,21 @@
 
 - name: Create locust environment
   shell: "/opt/anaconda/bin/conda create -y --name locust python=3.6"
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install locust
   shell: "/opt/anaconda/envs/locust/bin/pip install locust==1.4.1"
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install kafka-python
   shell: "/opt/anaconda/envs/locust/bin/pip install kafka-python==2.0.2"
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Retrieve istio ingress gateway informations
   shell: "kubectl get svc -n istio-system istio-ingressgateway -o json | jq .spec.ports"
@@ -95,31 +119,39 @@
   template:
     src: locustfile.py
     dest: /root/locustfile.py
-  notify: restart_locust
+  notify:
+    - restart_locust
+    - restart_locust_worker
 
 - name: Install backend file for kafka stream
   template:
     src: backend_base.py
     dest: /root/backend_base.py
-  notify: restart_locust
+  notify:
+    - restart_locust
+    - restart_locust_worker
 
 - name: Install kafka python stream lib
   template:
     src: kafkaimpl.py
     dest: /root/kafkaimpl.py
-  notify: restart_locust
+  notify:
+    - restart_locust
+    - restart_locust_worker
 
 - name: Create locust service
   template:
     src: locust.service
     dest: /etc/systemd/system/locust.service
-  notify: restart_locust
+  notify:
+    - restart_locust
+    - restart_locust_worker
 
 - name: update /etc/hosts
   lineinfile:
     dest: "/etc/hosts"
-    regexp: ".*{{hostvars[groups['master'][0]].ansible_default_ipv4.address}} dynamic-component.service.pf1$"
-    line: "{{hostvars[groups['master'][0]].ansible_default_ipv4.address}} dynamic-component.service.pf1"
+    regexp: ".*{{hostvars[groups['master'][0]].ansible_default_ipv4.address}} dynamic-component.service.hslinucb$"
+    line: "{{hostvars[groups['master'][0]].ansible_default_ipv4.address}} dynamic-component.service.hslinucb"
     state: present
 
 - name: reload systemd

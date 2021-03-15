@@ -88,7 +88,7 @@ metadata:
   namespace: default
 spec:
   hosts:
-  - "dynamic-component.service.pf1"
+  - "dynamic-component.service.hslinucb"
   gateways:
   - http-gateway
   http:

@@ -16,22 +16,41 @@
     - gnupg2
     - software-properties-common
     - python3-pip
-    - python-pip
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+
+- name: install python-pip
+  apt:
+    package: python-pip
+  when: ansible_python_version is version('3','<')
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Get docker gpg
   apt_key:
     url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
     state: present
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Add repository Docker
   apt_repository: 
     repo: deb https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_lsb.codename }} stable
     state: present
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: install docker 
   apt: package={{ item }} update_cache=yes
   with_items:
     - docker-ce
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Update docker service
   template:
@@ -67,3 +86,15 @@
 - name: install python docker
   pip:
     name: docker-py
+  when: ansible_python_version is version('2.7','<')
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+
+- name: install python docker
+  pip:
+    name: docker
+  when: ansible_python_version is version('2.7','>=')
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"

@@ -8,54 +8,105 @@
 
 - name: Create agent environment
   shell: /opt/anaconda/bin/conda create -y --name agent python=3.7.9
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install kafka-python
   shell: /opt/anaconda/envs/agent/bin/pip install kafka-python==2.0.2
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install kafka-python in base
   shell: /opt/anaconda/bin/pip install kafka-python==2.0.2
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install tensorflow
   shell: /opt/anaconda/envs/agent/bin/pip install tensorflow==2.4.1
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install tensorflow in base
   shell: /opt/anaconda/bin/pip install tensorflow==2.4.1
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install Keras
   shell: /opt/anaconda/envs/agent/bin/pip install Keras==2.3.1
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install Keras in base
   shell: /opt/anaconda/bin/pip install Keras==2.3.1
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install kubernetes-python
   shell: /opt/anaconda/envs/agent/bin/pip install kubernetes==12.0.0
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install kubernetes-python in base
   shell: /opt/anaconda/bin/pip install kubernetes==12.0.0
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install sdnotify-python
   shell: /opt/anaconda/envs/agent/bin/pip install sdnotify==0.3.2
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install sdnotify-python in base
   shell: /opt/anaconda/bin/pip install sdnotify==0.3.2
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install numpy-python
   shell: /opt/anaconda/envs/agent/bin/pip install numpy==1.19.4
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install numpy-python in base
   shell: /opt/anaconda/bin/pip install numpy==1.19.4
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install pandas-python
   shell: /opt/anaconda/envs/agent/bin/pip install pandas==1.1.4
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install pandas-python in base
   shell: /opt/anaconda/bin/pip install pandas==1.1.4
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install h5py
   shell: /opt/anaconda/envs/agent/bin/pip install h5py==2.10.0
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install h5py in base
   shell: /opt/anaconda/bin/pip install h5py==2.10.0
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Retrieve prometheus component informations
   shell: "kubectl get svc -n istio-system prometheus -o json"

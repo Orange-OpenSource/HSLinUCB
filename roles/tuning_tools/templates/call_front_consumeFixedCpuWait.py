@@ -56,7 +56,7 @@ while loop:
    start = time.time()
    try:
       headers = {}
-      headers['Host'] = "dynamic-component.service.pf1"
+      headers['Host'] = "dynamic-component.service.hslinucb"
       url = "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:{{ingress_gateway_port}}/ConsumeFixedCpuWait?cpu=" + sys.argv[1] + "&wait=" + MinWaitTime
       res = requests.get(url, headers=headers, timeout=20.0)
    except:

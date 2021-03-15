@@ -1,0 +1,55 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+all:
+  vars:
+     openstack_network: {{ private_network_cidr }}
+     ansible_ssh_private_key_file: hslinucb_ssh.key
+     external_http_proxy: "{{ external_http_proxy }}"
+master:
+  hosts:
+{% for server in master_instance_facts.openstack_servers %}
+    {{ server.name }}:
+      ansible_host: {% if server.interface_ip != "" %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+      ansible_user: {{ master_remote_user }}
+{% endfor %}
+worker:
+  hosts:
+{% for server in worker_instance_facts.openstack_servers %}
+    {{ server.name }}:
+      ansible_host: {% if server.interface_ip != "" %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p {{ master_remote_user }}@{{ master_instance_facts.openstack_servers[0].interface_ip }}\""
+      ansible_user: {{ worker_remote_user }}
+{% endfor %}
+stress:
+  hosts:
+{% for server in stress_instance_facts.openstack_servers %}
+    {{ server.name }}:
+      ansible_host: {% if server.interface_ip %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p {{ master_remote_user }}@{{ master_instance_facts.openstack_servers[0].interface_ip }}\""
+      ansible_user: {{ stress_remote_user }}
+{% endfor %}
+agent:
+  hosts:
+{% for server in agent_instance_facts.openstack_servers %}
+    {{ server.name }}:
+      ansible_host: {% if server.interface_ip != "" %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p {{ master_remote_user }}@{{ master_instance_facts.openstack_servers[0].interface_ip }}\""
+      ansible_user: {{ agent_remote_user }}
+{% endfor %}
+  vars:
+     jupyterlab_account:
+{% for account in jupyterlab_account %}
+        - user:
+            login: {{ account.user.login }}
+            password: {{ account.user.password }}
+{% endfor %}

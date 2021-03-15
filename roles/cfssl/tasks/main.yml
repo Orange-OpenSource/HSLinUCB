@@ -15,6 +15,9 @@
   with_items: 
     - { src_file: "cfssl_linux-amd64", dest_file: "cfssl" }
     - { src_file: "cfssljson_linux-amd64", dest_file: "cfssljson" }
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Copy template to generate certs
   template: 
@@ -32,7 +35,7 @@
 
 - name: Check if certificate file is already available locally
   stat:
-    path: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    path: "files.hslinucb/{{ item }}"
   register: certificate_file_check
   delegate_to: localhost
   become: false
@@ -41,9 +44,9 @@
     - "ca.csr"
     - "ca.pem"
     - "ca-key.pem"
-    - "testbed-pf1.csr"
-    - "testbed-pf1.pem"
-    - "testbed-pf1-key.pem"
+    - "testbed-hslinucb.csr"
+    - "testbed-hslinucb.pem"
+    - "testbed-hslinucb-key.pem"
 
 - name: Restore the certificate authority and private key for kubernetes
   copy:
@@ -60,7 +63,7 @@
   when: inventory_hostname in groups['master']
 
 - name: Generate the certificate and private key
-  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=testbed-pf1 kubernetes-csr.json | cfssljson -bare testbed-pf1"
+  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=testbed-hslinucb kubernetes-csr.json | cfssljson -bare testbed-hslinucb"
   when: generate_cert.changed and inventory_hostname in groups['master']
   args: 
     chdir: "~/"
@@ -75,7 +78,7 @@
 
 - name: Check if kubernetes private key is available
   stat:
-    path: "testbed-pf1-key.pem"
+    path: "testbed-hslinucb-key.pem"
   register: kubernetes_private_key_check
 
 - name: Change right on kubernetes private key
@@ -85,18 +88,18 @@
     state: file
   when: kubernetes_private_key_check.stat.exists == true
   with_items:
-    - "testbed-pf1-key.pem"
+    - "testbed-hslinucb-key.pem"
 
 - name: Fetch certificats and store into files for kubernetes
   fetch: 
     src: "~/{{ item }}"
-    dest: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    dest: "files.hslinucb/{{ item }}"
     flat: yes
   with_items:
     - "ca-config.json"
     - "ca.csr"
     - "ca.pem"
     - "ca-key.pem"
-    - "testbed-pf1.csr"
-    - "testbed-pf1.pem"
-    - "testbed-pf1-key.pem"
+    - "testbed-hslinucb.csr"
+    - "testbed-hslinucb.pem"
+    - "testbed-hslinucb-key.pem"

@@ -1,0 +1,82 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: stop systemd-resolved
+  service:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+    daemon_reload: yes 
+  when: "inventory_hostname in groups['master'] and ansible_distribution|lower == 'ubuntu'"
+
+- name: Check if resolv.conf is already patched
+  shell: grep "nameserver {{ hostvars[groups['master'][0]].ansible_default_ipv4.address }}" /etc/resolv.conf
+  failed_when: false
+  changed_when: false
+  register: check_resolv
+  when: inventory_hostname not in groups['master']
+
+- name: Check if resolv.conf is a symbolink link
+  stat:
+    path: /etc/resolv.conf
+  register: sym
+  when: inventory_hostname not in groups['master']
+
+- name: copy resolv.conf file
+  shell: cp -f /run/systemd/resolve/resolv.conf /etc/resolv.conf.ansible
+  when: inventory_hostname not in groups['master'] and sym.stat.islnk and ansible_distribution|lower == 'ubuntu'
+
+- name: delete resolv.conf file
+  file:
+    path: /etc/resolv.conf
+    state: absent
+  when: inventory_hostname not in groups['master'] and sym.stat.islnk
+
+- name: re-create resolv.conf file
+  shell: mv /etc/resolv.conf.ansible /etc/resolv.conf
+  when: inventory_hostname not in groups['master'] and sym.stat.islnk
+
+- name: Change /etc/resolv.conf link to old resolv.conf format only for ubuntu
+  file:
+    src: /run/systemd/resolve/resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+  become: true
+  become_method: sudo
+  when: "inventory_hostname in groups['master'] and ansible_distribution|lower == 'ubuntu'"
+
+- name: Remove immutable attribute on resolv.conf
+  file:
+    path: "/etc/resolv.conf"
+    attr: "e"
+  when: inventory_hostname not in groups['master'] and check_resolv.rc != 0
+
+- name: Update resolv.conf
+  replace:
+    path: /etc/resolv.conf
+    regexp: '^(.*)nameserver(.*)$'
+    replace: 'nameserver {{ hostvars[groups["master"][0]].ansible_default_ipv4.address }}'
+  when: inventory_hostname not in groups['master'] and check_resolv.rc != 0
+
+- name: set immutable flag on resolv.conf
+  file:
+    path: /etc/resolv.conf
+    attr: +i
+  register: check_lock
+  changed_when: "'i' not in check_lock.diff.before.attributes"
+  when: inventory_hostname not in groups['master']
+
+- name: install dnsmasq
+  apt: package=dnsmasq update_cache=yes
+  notify: restart dnsmasq
+  when: inventory_hostname in groups['master']
+  environment:
+    - http_proxy: "{{ external_http_proxy }}"
+    - https_proxy: "{{ external_http_proxy }}"
+
+- meta: flush_handlers

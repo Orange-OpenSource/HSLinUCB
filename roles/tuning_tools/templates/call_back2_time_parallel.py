@@ -44,7 +44,7 @@ while loop:
    start = time.time()
    try:
       headers = {}
-      headers['Host'] = "dynamic-component.service.pf1"
+      headers['Host'] = "dynamic-component.service.hslinucb"
       url = "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:{{ingress_gateway_port}}/code/Proxy2BackParallel?path1=ResponseTime?time=" + sys.argv[1] + "&path2=ResponseTime?time=" + sys.argv[1]
       res = requests.get(url, headers=headers, timeout=20.0)
    except:

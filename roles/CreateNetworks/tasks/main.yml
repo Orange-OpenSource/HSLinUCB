@@ -1,0 +1,73 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+- name: Create networks on Openstack cloud
+  openstack.cloud.network:
+    state: present
+    name: "hslinucb_net"
+    auth: "{{ cloud_auth }}"
+    timeout: 180 
+    validate_certs: False
+
+- name: Create subnets on Openstack cloud with DNS server
+  openstack.cloud.subnet:
+    state: present
+    network_name: "hslinucb_net"
+    name: "hslinucb_subnet"
+    cidr: "{{ private_network_cidr }}"
+    dns_nameservers: "{{ private_network_dns_server }}"
+    auth: "{{ cloud_auth }} "
+    timeout: 180 # How long should ansible wait for the requested resource.
+    validate_certs: False
+  when: private_network_dns_server is defined and private_network_dns_server != ""
+
+- name: Create subnets on Openstack cloud with default DNS server
+  openstack.cloud.subnet:
+    state: present
+    network_name: "hslinucb_net"
+    name: "hslinucb_subnet"
+    cidr: "{{ private_network_cidr }}"
+    auth: "{{ cloud_auth }} "
+    timeout: 180 # How long should ansible wait for the requested resource.
+    validate_certs: False
+  when: private_network_dns_server is not defined or (private_network_dns_server is defined and private_network_dns_server == "")
+
+- name: Create routers on Openstack cloud
+  openstack.cloud.router:
+    state: present
+    name: "hslinucb_router"
+    interfaces:
+      - "hslinucb_subnet"
+    auth: "{{ cloud_auth }}"
+    timeout: 180
+    validate_certs: False
+  when: (CloudRouterName is not defined or (CloudRouterName is defined and CloudRouterName == "")) and (external_network_name is not defined or external_network_name is defined and (external_network_name == ""))
+
+- name: Create routers on Openstack cloud and add route to an external network
+  openstack.cloud.router:
+    state: present
+    name: "hslinucb_router"
+    network: "{{ external_network_name }}"
+    interfaces:
+      - "hslinucb_subnet"
+    auth: "{{ cloud_auth }}"
+    timeout: 180 
+    validate_certs: False
+  when: (CloudRouterName is not defined or (CloudRouterName is defined and CloudRouterName == "")) and (external_network_name is defined and external_network_name != "")
+
+- name: Add Interface on an existing router on Openstack cloud
+  openstack.cloud.router:
+    state: present
+    name: "{{ CloudRouterName }}"
+    interfaces:
+      - "hslinusb_subnet"
+    timeout: 180
+    auth: "{{ cloud_auth }}"
+    validate_certs: False
+  when: CloudRouterName is defined and CloudRouterName != ""

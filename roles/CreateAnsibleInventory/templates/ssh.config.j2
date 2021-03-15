@@ -1,0 +1,68 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+Host 127.0.0.1
+ProxyCommand none
+BatchMode yes
+CheckHostIP no
+StrictHostKeyChecking no
+PasswordAuthentication no
+
+{% for server in master_instance_facts.openstack_servers %}
+Host {{ server.name }}
+User {{ master_remote_user }}
+HostName {{ server.interface_ip }}
+ProxyCommand none
+IdentityFile hslinucb_ssh.key
+BatchMode yes
+CheckHostIP no
+StrictHostKeyChecking no
+PasswordAuthentication no
+{% endfor %}
+
+{% for server in agent_instance_facts.openstack_servers %}
+Host {{ server.name }}
+User {{ agent_remote_user }}
+HostName {% if server.interface_ip != "" %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+{% if server.interface_ip != "" %}ProxyCommand none{% else %}ProxyCommand ssh -q -A {{ master_remote_user }}@{{ master_instance_facts.openstack_servers[0].interface_ip }} -i ./hslinucb_ssh.key -W %h:%p{% endif %}
+
+IdentityFile ./hslinucb_ssh.key
+BatchMode yes
+CheckHostIP no
+StrictHostKeyChecking no
+PasswordAuthentication no
+{% endfor %}
+
+{% for server in stress_instance_facts.openstack_servers %}
+Host {{ server.name }}
+User {{ stress_remote_user }}
+HostName {% if server.interface_ip != "" %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+{% if server.interface_ip != "" %}ProxyCommand none{% else %}ProxyCommand ssh -q -A {{ master_remote_user }}@{{ master_instance_facts.openstack_servers[0].interface_ip }} -i ./hslinucb_ssh.key -W %h:%p{% endif %}
+
+IdentityFile ./hslinucb_ssh.key
+BatchMode yes
+CheckHostIP no
+StrictHostKeyChecking no
+PasswordAuthentication no
+{% endfor %}
+
+{% for server in worker_instance_facts.openstack_servers %}
+Host {{ server.name }}
+User {{ worker_remote_user }}
+HostName {% if server.interface_ip != "" %}{{ server.interface_ip }}{% else %}{{ server.private_v4 }}{% endif %}
+
+{% if server.interface_ip != "" %}ProxyCommand none{% else %}ProxyCommand ssh -q -A {{ master_remote_user }}@{{ master_instance_facts.openstack_servers[0].interface_ip }} -i ./hslinucb_ssh.key -W %h:%p{% endif %}
+
+IdentityFile ./hslinucb_ssh.key
+BatchMode yes
+CheckHostIP no
+StrictHostKeyChecking no
+PasswordAuthentication no
+{% endfor %}

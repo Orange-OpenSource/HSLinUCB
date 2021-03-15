@@ -1,0 +1,32 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+  - name: create keypair
+    os_keypair:
+      state: present
+      name: "hslinucb_ssh"
+      auth: "{{cloud_auth}}"
+      validate_certs: False
+    register: K8sKey
+
+  - name: store keypair private key local
+    template: 
+      src: k8s.j2
+      dest: "./hslinucb_ssh.key" 
+      mode: 0600
+    when: K8sKey.changed
+
+  - name: check if private key exists
+    stat: 
+      path: "./hslinucb_ssh.key"
+    register: checkK8sKey
+
+  - name: stop if private key does not exists
+    fail: msg="Private does not exist or is empty"
+    when: checkK8sKey.stat.exists == false or (checkK8sKey.stat.exists == true and checkK8sKey.stat.size == 0)

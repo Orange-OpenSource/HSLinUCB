@@ -6,4 +6,4 @@
 #
 # Author: David DELANDE <david.delande@orange.com> et al.
 
-curl -i "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:{{ingress_gateway_port}}/code/Proxy2BackSerial?path1=ResponseTime?time=100&path2=Proxy?path=ResponseTime?time=200" -H "Host: dynamic-component.service.pf1"
+curl -i "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:{{ingress_gateway_port}}/code/Proxy2BackSerial?path1=ResponseTime?time=100&path2=Proxy?path=ResponseTime?time=200" -H "Host: dynamic-component.service.hslinucb"

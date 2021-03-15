@@ -56,18 +56,21 @@
 
 - name: Copy certificates to /etc/etcd for kubernetes
   copy: 
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    src: "files.hslinucb/{{ item }}"
     dest: "/etc/etcd/{{ item }}"
   with_items: 
     - "ca.pem"
-    - "testbed-pf1.pem"
-    - "testbed-pf1-key.pem"
+    - "testbed-hslinucb.pem"
+    - "testbed-hslinucb-key.pem"
 
 - name: Unarchive flanneld binaries
   unarchive: 
     src: "https://github.com/coreos/flannel/releases/download/v0.13.0/flannel-v0.13.0-linux-amd64.tar.gz"
     dest: "/opt/flanneld"
     remote_src: yes
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Create link flanneld binaries
   file: 
@@ -94,18 +97,18 @@
     - { file: "10-flannel.conflist", dest: "/etc/cni/net.d" }
 
 - name:  Get current network configuration in etcd in kubernetes
-  shell:  "etcdctl --cert-file /etc/etcd/testbed-pf1.pem --key-file /etc/etcd/testbed-pf1-key.pem --ca-file /etc/etcd/ca.pem get /coreos.com/network/config '{\"Network\"}'"
+  shell:  "etcdctl --cert-file /etc/etcd/testbed-hslinucb.pem --key-file /etc/etcd/testbed-hslinucb-key.pem --ca-file /etc/etcd/ca.pem get /coreos.com/network/config '{\"Network\"}'"
   when: (groups['master'] is defined and inventory_hostname == groups['master'][0])
   register: etcdkey
   changed_when: false
   failed_when: "etcdkey.rc != 0 and etcdkey.rc != 4"
 
 - name:  Define flannel network configuration in etcd in kubernetes
-  shell:  "etcdctl --cert-file /etc/etcd/testbed-pf1.pem --key-file /etc/etcd/testbed-pf1-key.pem --ca-file /etc/etcd/ca.pem  mk /coreos.com/network/config '{\"Network\":\"10.9.0.0/16\", \"SubnetMin\": \"10.9.128.0\", \"SubnetMax\": \"10.9.250.0\", \"Backend\":{\"Type\":\"vxlan\"}}'"
+  shell:  "etcdctl --cert-file /etc/etcd/testbed-hslinucb.pem --key-file /etc/etcd/testbed-hslinucb-key.pem --ca-file /etc/etcd/ca.pem  mk /coreos.com/network/config '{\"Network\":\"10.9.0.0/16\", \"SubnetMin\": \"10.9.128.0\", \"SubnetMax\": \"10.9.250.0\", \"Backend\":{\"Type\":\"vxlan\"}}'"
   when: (groups['master'] is defined and inventory_hostname ==  groups['master'][0]) and "Key not found" in etcdkey.stderr
 
 - name:  Update flannel network configuration in etcd if needed in kubernetes
-  shell:  "etcdctl --cert-file /etc/etcd/testbed-pf1.pem --key-file /etc/etcd/testbed-pf1-key.pem --ca-file /etc/etcd/ca.pem  update /coreos.com/network/config '{\"Network\":\"10.9.0.0/16\", \"SubnetMin\": \"10.9.128.0\", \"SubnetMax\": \"10.9.250.0\", \"Backend\":{\"Type\":\"vxlan\"}}'"
+  shell:  "etcdctl --cert-file /etc/etcd/testbed-hslinucb.pem --key-file /etc/etcd/testbed-hslinucb-key.pem --ca-file /etc/etcd/ca.pem  update /coreos.com/network/config '{\"Network\":\"10.9.0.0/16\", \"SubnetMin\": \"10.9.128.0\", \"SubnetMax\": \"10.9.250.0\", \"Backend\":{\"Type\":\"vxlan\"}}'"
   when: (groups['master'] is defined and inventory_hostname == groups['master'][0]) and '10.9.0.0/16' not in etcdkey.stdout
 
 - name: Start flanneld

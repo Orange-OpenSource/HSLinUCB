@@ -1,0 +1,55 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+- name: Retrieves agent servers fact
+  openstack.cloud.server_info:
+    server: agent*
+    filters:
+      metadata: {"ansible_host_groups": "agent"}
+    validate_certs: False
+    auth: "{{ cloud_auth }}"
+  register: "agent_instance_facts"
+
+- name: Retrieves stress servers fact
+  openstack.cloud.server_info:
+    server: stress*
+    filters:
+      metadata: {"ansible_host_groups": "stress"}
+    validate_certs: False
+    auth: "{{ cloud_auth }}"
+  register: "stress_instance_facts"
+
+- name: Retrieves master servers fact
+  openstack.cloud.server_info:
+    server: master*
+    filters:
+      metadata: {"ansible_host_groups": "master"}
+    validate_certs: False
+    auth: "{{ cloud_auth }}"
+  register: "master_instance_facts"
+
+- name: Retrieves worker servers fact
+  openstack.cloud.server_info:
+    server: worker*
+    filters:
+      metadata: {"ansible_host_groups": "worker"}
+    validate_certs: False
+    auth: "{{ cloud_auth }}"
+  register: "worker_instance_facts"
+
+- name: Generate ansible static inventory
+  template:
+    src: "hosts.yaml.j2"
+    dest: "hosts.yaml"
+
+- name: Generate ssh config file
+  template:
+    src: ssh.config.j2
+    dest: "./ssh_hslinucb.config"
+    mode: 0755

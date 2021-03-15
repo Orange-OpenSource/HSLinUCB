@@ -23,6 +23,9 @@
 - name: Build docker_tcpdump image
   docker_image:
     path: /tmp/docker_tcpdump
+    buildargs:
+      http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+      https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
     name: "{{ ansible_default_ipv4.address }}:5000/tcpdump"
     tag: "1"
     push: yes

@@ -11,16 +11,25 @@
   apt: package={{ item }} update_cache=yes
   with_items:
     - apt-transport-https
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - apt_key:
     url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
     state: present
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Add Kubernetes apt repo
   apt_repository:
     repo: 'deb http://apt.kubernetes.io/ kubernetes-xenial main'
     filename: kubernetes
     state: present
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: install kubeadm
   apt: package={{ item }}  update_cache=yes
@@ -29,9 +38,15 @@
     - kubeadm=1.19.3-00
     - kubectl=1.19.3-00
   when: inventory_hostname in groups['master'] or inventory_hostname in groups['worker']
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: install kubectl
   apt: package={{ item }} update_cache=yes
   with_items:
     - kubectl=1.19.3-00
   when: (groups['agent'] is defined and inventory_hostname in groups['agent']) or (groups['stress'] is defined and inventory_hostname in groups['stress'])
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"

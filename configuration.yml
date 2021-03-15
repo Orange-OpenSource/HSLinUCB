@@ -1,0 +1,107 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+######################### HSLINUCB CONFIGURATION FILE ##########################################
+
+#Once the cloud_auth section is filled you can try to authenticate to the cloud by executing: ansible-playbook check_connection.yml -e "@<your configuration file>"
+#If an error is raised checks the cloud_auth section for missing informations.
+
+#When the configuration of this file is done it is good to encrypt this file as some sensitive informations are present.
+#To encrypt: ansible-vault encrypt <your configuration file>
+#WARN: DON'T LOOSE YOUR ENCRYPTION PASSWORD AS THERE IS NO WAY TO RETRIEVE IT
+#To use ansible with an encrypted configuration file: ansible-playbook <playbook> -e "@<your encrypted configuration file>" --ask-vault-pass
+
+################################################################################################
+
+#Uncomment and fill the required authentication information for your Openstack Cloud. Some Openstack provider requires user_domain_id, other user_domain_name..etc..
+cloud_auth:
+  auth_url: <http url to openstack authentication API>
+  username: <openstack user name>
+  password: <openstack password> 
+  #user_domain_id: <openstack user domain id>
+  #user_domain_name: <openstack user domain name>
+  #domain_id: <openstack domain id>
+  #project_id: <openstack project id>
+  #project_name: <openstack project name>
+
+#Define the private network adresses in CIDR form.
+private_network_cidr: "192.168.1.0/24"
+
+#Comma separated list of DNS server to use for virtual machine on private network.
+private_network_dns_server: "8.8.8.8"
+
+#If your Cloud environment has an already available Router set the existing router name. Ansible will then add a route to this existing router. Otherwise leave blank.
+CloudRouterName: "<existing router name>"
+
+#If your router has to be connected to an existing external network in order to allocate floating ip set here the name of this external network. Otherwise leave blank.
+external_network_name: "<floating ip external network>"
+
+#Place here the Internet IPs authorized to access the virtual machine services. Generally it would be the Internet Client IP of your local machine and the ansible machine if different. WARN: Thes IP address will have full access to all the hslinucb virtual machines so set it carefully . The IP address must be set in CIDR Form.
+external_authorized_ip: ["1.2.3.4/32","5.6.7.8/32"]
+
+#If your virtual machine has to use an http proxy to access Internet set here the full http url to the proxy. Otherwise leave blanck
+external_http_proxy: "http://myproxy:8080"
+
+# AGENT VM SETTINGS
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
+agent_image: "< Debian 9 or Ubuntu 18_04 system image name or id>"
+
+#Place here the flavor to use for virtual machine creation. A flavor with 4Vcpu/16GB RAM and 40GB storage is a good compromise
+agent_flavor: "<flavor with 4Vcpu/16GBRam>"
+
+#Number of agent instance to create
+agent_count: 1
+
+#Place here the ssh user login used to connected on the virtual machine (the user login is cloud provider/system dependant)
+agent_remote_user: "cloud"
+
+# STRESS VM SETTINGS
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
+stress_image: "<Debian 9 or Ubuntu 18_04 system image name or id>"
+
+#Place here the flavor to use for virtual machine creation. A flavor with 4Vcpu/4GB RAM and 40GB storage is a good compromise
+stress_flavor: "<flavor with 4Vcpu/4GBRam>"
+
+#Number of stress instance to create
+stress_count: 2
+
+#Place here the ssh user login used to connected on the virtual machine (the user login is cloud provider/system dependant)
+stress_remote_user: "cloud"
+
+# KUBERNETES VM SETTINGS
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
+master_image: "<Debian 9 or Ubuntu 18_04 system image name or id>"
+
+#Place here the flavor to use for virtual machine creation. A flavor with 8Vcpu/16GB RAM and 40GB storage is a good compromise
+master_flavor: "<flavor with 8Vcpu/16GBRam>"
+
+#Number of master instance to create
+master_count: 1
+
+#Place here the ssh user login used to connected on the virtual machine (the user login is cloud provider/system dependant)
+master_remote_user: "cloud"
+
+#Place here the name or id of the system image to use for virtual machine creation. HSLinUCB has only be tested with Debian 9 or Ubuntu 18_04
+worker_image: "<Debian 9 or Ubuntu 18_04 system image name or id>"
+
+#Place here the flavor to use for virtual machine creation. A flavor with 8Vcpu/16GB RAM and 40GB storage is a good compromise
+worker_flavor: "<flavor with 8Vcpu/16GBRam>"
+
+#Number of worker instance to create
+worker_count: 2
+
+#Place here the ssh user login used to connected on the virtual machine (the user login is cloud provider/system dependant)
+worker_remote_user: "cloud"
+
+# JUPYTER LAB ON AGENT VM SETTINGS
+#Set here the login and password for the JupyterLab interface on the agent VM.
+#Choose a strong password as this account will be a system account on the server and can also be used to login with SSH
+jupyterlab_account:
+   - user:
+       login: <login>
+       password: <password>

@@ -61,3 +61,6 @@
   when: inventory_hostname not in groups['master'] and inventory_hostname not in groups['worker']
   with_items:
     - prometheus-node-exporter
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"

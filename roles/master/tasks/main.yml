@@ -66,8 +66,16 @@
     chdir: /etc/kubernetes
   when: ( groups['master'] is defined and groups['master'][0] == inventory_hostname )
 
+- name: Retrieve kube-flannel
+  get_url:
+    url: "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+    dest: "/tmp/kube-flannel.yml"
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+
 - name: Deploying the flannel overlay network in kubernetes
-  shell: "kubectl --kubeconfig admin.conf apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml > steps/network_overlay.log"
+  shell: "kubectl --kubeconfig admin.conf apply -f /tmp/kube-flannel.yml > steps/network_overlay.log"
   args:
     chdir: /etc/kubernetes
     creates: steps/network_overlay.log
@@ -96,7 +104,7 @@
 - name: Fetch kubernetes pki certificates in kubernetes
   fetch:
     src: "/etc/kubernetes/pki/{{ item }}"
-    dest: "files.pf1_myProject_myCloud_noRegion_myNet/testbed-pf1/pki/{{ item }}"
+    dest: "files.hslinucb/testbed-hslinucb/pki/{{ item }}"
     flat: yes
   when: groups['master'][0] == inventory_hostname
   with_items:
@@ -113,7 +121,7 @@
 
 - name: Copy kubernetes pki certificates to other master in kubernetes
   copy:
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/testbed-pf1/pki"
+    src: "files.hslinucb/testbed-hslinucb/pki"
     dest: "/etc/kubernetes"
     mode: "preserve"
   when: groups['master'][0] != inventory_hostname and inventory_hostname in groups['master']
@@ -176,6 +184,6 @@
 - name: Fetch admin file
   fetch:
     src: /etc/kubernetes/admin.conf
-    dest: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    dest: "files.hslinucb/admin.conf"
     flat: yes
   when: groups['master'][0] == inventory_hostname

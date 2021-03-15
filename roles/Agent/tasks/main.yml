@@ -11,6 +11,9 @@
   with_items:
     - git
     - dnsutils
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Get anaconda install script
   get_url:
@@ -18,22 +21,37 @@
     dest: /opt/Anaconda.sh
     mode: 0755
   register: anaconda
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install anaconda
   shell: /opt/Anaconda.sh -b -p /opt/anaconda
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Activate conda
   shell: /opt/anaconda/bin/conda init
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Update anaconda
   shell: /opt/anaconda/bin/conda update -y conda
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Install jupyterhub
   shell: /opt/anaconda/bin/conda install -y -c conda-forge jupyterhub
   when: anaconda.changed
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Add jupyterlab user
   user:
@@ -60,7 +78,7 @@
 
 - name: copy config file to HOME/.kube dir
   copy:
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: ~{{ansible_user }}/.kube/config
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
@@ -76,7 +94,7 @@
 
 - name: copy config file to HOME/.kube in root directory
   copy:
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: /root/.kube/config
     owner: "root"
     group: "root"
@@ -93,7 +111,7 @@
 
 - name: copy config file to HOME/.kube in jupyterlab user directory
   copy:
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/admin.conf"
+    src: "files.hslinucb/admin.conf"
     dest: "/home/{{ item.user.login }}/.kube/config"
     owner: "{{ item.user.login }}"
     group: "{{ item.user.login }}"

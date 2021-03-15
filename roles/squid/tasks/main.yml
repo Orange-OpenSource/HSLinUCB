@@ -1,0 +1,21 @@
+---
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+- name: Install squid proxy
+  apt: package=squid update_cache=yes
+  notify: squid restart
+  environment:
+    - http_proxy: "{{ external_http_proxy }}"
+    - https_proxy: "{{ external_http_proxy }}"
+
+- name: Generate squid configuration
+  template:
+    src: "squid.conf.j2"
+    dest: "/etc/squid/squid.conf"
+  notify: squid restart

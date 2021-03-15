@@ -39,18 +39,21 @@
 
 - name: Copy certificates to /etc/etcd for kubernetes
   copy: 
-    src: "files.pf1_myProject_myCloud_noRegion_myNet/{{ item }}"
+    src: "files.hslinucb/{{ item }}"
     dest: "/etc/etcd/{{ item }}"
   with_items:
     - "ca-config.json" 
     - "ca.pem"
-    - "testbed-pf1.pem"
-    - "testbed-pf1-key.pem"
+    - "testbed-hslinucb.pem"
+    - "testbed-hslinucb-key.pem"
 
 - name: Get etcd binaries
   get_url: 
     url: "https://github.com/coreos/etcd/releases/download/v3.3.9/etcd-v3.3.9-linux-amd64.tar.gz"
     dest: "/opt/etcd/etcd-v3.3.9-linux-amd64.tar.gz"
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Unarchive etcd binaries
   unarchive: 

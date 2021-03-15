@@ -1,37 +1,53 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
 all:
   vars:
-     openstack_network: 192.168.0.0/24
+     openstack_network: 192.168.1.0/24
+     ansible_ssh_private_key_file: hslinucb_ssh.key
+     external_http_proxy: "http://myproxy:8080"
 master:
   hosts:
     master1:
-      ansible_host: 192.168.0.60 
-      ansible_user: cloud
+      ansible_host: <master1 floating ip> 
+      ansible_user: <master1 remote ssh user>
 worker:
   hosts:
-    worker1:
-      ansible_host: 192.168.0.57
-      ansible_user: cloud
-    worker2:
-      ansible_host: 192.168.0.113
-      ansible_user: cloud
     worker3:
-      ansible_host: 192.168.0.66
-      ansible_user: cloud
+      ansible_host: <worker3 ip address on openstack private network>
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p <master1 remote ssh user>@<master1 floating ip>\""
+      ansible_user: <worker3 remote ssh user>
+    worker2:
+      ansible_host: <worker2 ip address on openstack private network>
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p <master1 remote ssh user>@<master1 floating ip>\""
+      ansible_user: <worker2 remote ssh user>
+    worker1:
+      ansible_host: <worker1 ip address on openstack private network>
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p <master1 remote ssh user>@<master1 floating ip>\""
+      ansible_user: <worker1 remote ssh user>
 stress:
   hosts:
-    stress1:
-      ansible_host: 192.168.0.44
-      ansible_user: cloud
     stress2:
-      ansible_host: 192.168.0.161
-      ansible_user: cloud
+      ansible_host: <stress2 ip address on openstack private network>
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p <master1 remote ssh user>@<master1 floating ip>\""
+      ansible_user: <stress2 remote ssh user>
+    stress1:
+      ansible_host: <stress1 ip address on openstack private network>
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p <master1 remote ssh user>@<master1 floating ip>\""
+      ansible_user: <stress1 remote ssh user>
 agent:
   hosts:
     agent1:
-      ansible_host: 192.168.0.54
-      ansible_user: cloud
+      ansible_host: <agent1 ip address on openstack private network>
+      ansible_ssh_common_args: "-o ProxyCommand=\"ssh -i hslinucb_ssh.key -W %h:%p <master1 remote ssh user>@<master1 floating ip\""
+      ansible_user: <agent1 remote ssh user>
   vars:
      jupyterlab_account:
         - user:
-            login: david
-            password: davidpassword
+            login: <jupyter login>
+            password: <jupyter password>

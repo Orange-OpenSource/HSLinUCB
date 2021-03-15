@@ -1,0 +1,46 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al.
+
+server {
+        listen 80;
+        listen [::]:80;
+
+        access_log /var/log/nginx/reverse-access.log;
+        error_log /var/log/nginx/reverse-error.log;
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+        server_name _;
+        #location / {
+        #        try_files $uri =404;
+        #}
+        location /locust/ {
+                    proxy_pass http://{{hostvars[groups['stress'][0]].ansible_default_ipv4.address }}:8089/;
+        }
+        location /hubagent/ {
+                    proxy_pass http://{{hostvars[groups['agent'][0]].ansible_default_ipv4.address }}:8000/hubagent/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "Upgrade";
+                    proxy_set_header Host $host;
+        }
+        location /prometheus/ {
+                    proxy_pass http://{{prometheus_component.spec.clusterIP}}:{{prometheus_component.spec.ports[0].port}}/;
+        }
+        location /graph {
+                    proxy_pass http://{{prometheus_component.spec.clusterIP}}:{{prometheus_component.spec.ports[0].port}}/graph;
+        }
+        location /static {
+                    proxy_pass http://{{prometheus_component.spec.clusterIP}}:{{prometheus_component.spec.ports[0].port}}/static;
+        }
+        location /api {
+                    proxy_pass http://{{prometheus_component.spec.clusterIP}}:{{prometheus_component.spec.ports[0].port}}/api;
+        }
+        location /grafana/ {
+                    proxy_pass http://{{grafana_component.spec.clusterIP}}:{{grafana_component.spec.ports[0].port}}/;
+        }
+}

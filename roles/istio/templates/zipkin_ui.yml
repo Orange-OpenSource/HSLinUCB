@@ -51,7 +51,7 @@ spec:
             - name: JAVA_OPTS
               value: "-XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Xms700M -Xmx700M -XX:+UseG1GC -server"
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: kafka-cp-kafka.kafka-system.svc.cluster.local:9092
+              value: {{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:{{kafka_component.spec.ports[0].port}}
             - name: ZIPKIN_LOGGING_LEVEL
               value: DEBUG
       affinity:

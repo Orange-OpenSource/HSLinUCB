@@ -7,9 +7,17 @@
 #
 # Author: David DELANDE <david.delande@orange.com> et al.
 
-- name: Update host and configure NTP on kubernetes instance
+- name: Install squid
+  hosts: "master"
+  become: true
+  become_method: sudo
+  gather_facts: true
+  roles:
+    - { role: squid }
+
+- name: Update host and configure NTP
   hosts:
-    - "master1"
+    - "master"
     - "worker"
     - "stress"
     - "agent"
@@ -18,13 +26,14 @@
   gather_facts: true
   roles:
     - { role: update_hosts }
+    - { role: dnsmasq }
     - { role: ntp }
     - { role: common }
     - { role: NfsServer }
 
 - name: Generate Cluster certificats
   hosts:
-    - "master1"
+    - "master"
   become: true
   become_method: sudo
   gather_facts: True
@@ -33,7 +42,7 @@
 
 - name: Install Kubernetes master
   hosts:
-    - "master1"
+    - "master"
   gather_facts: True
   become: true
   become_method: sudo
@@ -59,7 +68,7 @@
     - { role: worker }
 
 - name: Install Kubernetes kafka, istio and prometheus
-  hosts: "master1"
+  hosts: "master"
   gather_facts: True
   become: true
   become_method: sudo
@@ -69,7 +78,7 @@
     - { role: prometheus }
 
 - name: Deploy application component
-  hosts: "master1"
+  hosts: "master"
   gather_facts: True
   become: true
   become_method: sudo
@@ -88,7 +97,7 @@
 
 - name: Deploy tools
   hosts:
-    - "master1"
+    - "master"
     - "worker"
     - "stress"
     - "agent"
@@ -117,3 +126,11 @@
   roles:
     - { role: kubeadm}
     - { role: locust}
+
+- name: Install nginx
+  hosts: "master"
+  become: true
+  become_method: sudo
+  gather_facts: true
+  roles:
+    - { role: nginx }

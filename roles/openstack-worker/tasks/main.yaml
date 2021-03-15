@@ -1,0 +1,39 @@
+# Software Name : HSLinUCB
+# SPDX-FileCopyrightText: Copyright (c) 2021 Orange
+# SPDX-License-Identifier: GPL-2.0
+#
+# This software is distributed under the GNU General Public License v2.0 license
+#
+# Author: David DELANDE <david.delande@orange.com> et al
+
+- name: Create OpenStack worker instance
+  openstack.cloud.server:
+    security_groups: 
+      - "sg-hslinucb"
+    name: "worker{{ item }}"
+    image: "{{ worker_image }}"
+    key_name: "hslinucb_ssh"
+    flavor: "{{ worker_flavor }}"
+    boot_from_volume: False
+    terminate_volume: True
+    auto_ip: no
+    network: "hslinucb_net"
+    meta:
+      ansible_host_groups: "worker"
+    userdata: |
+      #cloud-config
+      package_upgrade: false
+      package_update: false
+      manage_etc_hosts: false
+      bootcmd:
+        - systemctl disable apt-daily.timer
+        - systemctl disable apt-daily.service
+        - systemctl disable apt-daily-upgrade.timer
+        - systemctl disable apt-daily-upgrade.service
+        - systemctl stop apt-daily.timer
+        - systemctl stop apt-daily.service
+        - systemctl stop apt-daily-upgrade.timer
+        - systemctl stop apt-daily-upgrade.service
+    auth: "{{ cloud_auth }}"
+    validate_certs: False
+  with_sequence: count={{ worker_count }}

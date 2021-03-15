@@ -7,10 +7,10 @@ ExecStart=/usr/local/bin/etcd \
 {% if (groups['master'] is defined and inventory_hostname in groups['master']) or (groups['worker'] is defined and inventory_hostname in groups['worker']) %}
   --name etcd-{% for host in groups['master'] %}{% if host == inventory_hostname %}{{ loop.index -1 }}{% endif %}{% endfor %} \
 {% endif %}
-  --cert-file=/etc/etcd/testbed-pf1.pem \
-  --key-file=/etc/etcd/testbed-pf1-key.pem \
-  --peer-cert-file=/etc/etcd/testbed-pf1.pem \
-  --peer-key-file=/etc/etcd/testbed-pf1-key.pem \
+  --cert-file=/etc/etcd/testbed-hslinucb.pem \
+  --key-file=/etc/etcd/testbed-hslinucb-key.pem \
+  --peer-cert-file=/etc/etcd/testbed-hslinucb.pem \
+  --peer-key-file=/etc/etcd/testbed-hslinucb-key.pem \
   --trusted-ca-file=/etc/etcd/ca.pem \
   --peer-trusted-ca-file=/etc/etcd/ca.pem \
   --peer-client-cert-auth \

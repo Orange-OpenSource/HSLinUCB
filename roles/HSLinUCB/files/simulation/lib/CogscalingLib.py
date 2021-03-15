@@ -34,7 +34,7 @@ class OrchestratorActionResult(Thread):
         self.debug=debug
         replay = True
         if replay == False:
-            self.OrchestratorActionResult_consumer = KafkaConsumer('action_result',bootstrap_servers=['kafka.service.pf1:9092'],value_deserializer=lambda x: loads(x.decode('utf-8')))
+            self.OrchestratorActionResult_consumer = KafkaConsumer('action_result',bootstrap_servers=['kafka.service.hslinucb:9092'],value_deserializer=lambda x: loads(x.decode('utf-8')))
         else:
             self.OrchestratorActionResult_consumer = None
         self.resultTable = {}
@@ -87,7 +87,7 @@ class StateResult(Thread):
         self.debug=debug
         replay = True
         if replay == False:
-            self.StateResult_consumer = KafkaConsumer('state',bootstrap_servers=['kafka.service.pf1:9092'],value_deserializer=lambda x: loads(x.decode('utf-8')))
+            self.StateResult_consumer = KafkaConsumer('state',bootstrap_servers=['kafka.service.hslinucb:9092'],value_deserializer=lambda x: loads(x.decode('utf-8')))
         else:
             self.StateResult_consumer = None
         self.stateTable = {}
@@ -153,7 +153,7 @@ class Orchestrator():
         self.debug=debug
         replay = True
         if replay == False:
-            self.kafka_producer = KafkaProducer(bootstrap_servers = ['kafka.service.pf1:9092'],acks='all',value_serializer=lambda x: dumps(x).encode('utf-8'))
+            self.kafka_producer = KafkaProducer(bootstrap_servers = ['kafka.service.hslinucb:9092'],acks='all',value_serializer=lambda x: dumps(x).encode('utf-8'))
         else:
             self.kafka_producter = None
         self.orchestratorActionResult = OrchestratorActionResult(debug=self.debug)

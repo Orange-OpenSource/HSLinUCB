@@ -20,12 +20,18 @@
     src: https://github.com/istio/istio/releases/download/1.6.12/istio-1.6.12-linux-amd64.tar.gz
     dest: /opt/istio
     remote_src: yes
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Untar helm
   unarchive:
     src: https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz
     dest: /opt/helm
     remote_src: yes
+  environment:
+    - http_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
+    - https_proxy: "http://{{hostvars[groups['master'][0]].ansible_default_ipv4.address}}:3128"
 
 - name: Copy istioctl and helm binary to /usr/local/bin
   copy:
@@ -73,6 +79,14 @@
   delay: 5
   when: groups['master'][0] == inventory_hostname
 
+- name: Retrieve kafka component informations
+  shell: "kubectl get svc -n kafka-system kafka-external -o json"
+  register: kafka_component_tmp
+  delegate_to: "{{ groups['master'][0] }}"
+
+- set_fact:
+    kafka_component: "{{ kafka_component_tmp.stdout|from_json }}"
+
 - name: Template zipkin-ui on kafka
   template:
     src: zipkin_ui.yml
@@ -84,7 +98,7 @@
   when: groups['master'][0] == inventory_hostname
 
 - name: Change environment variable on istio-tracing to enable kafka stream
-  shell: 'kubectl set env deploy istio-tracing -n istio-system KAFKA_FORWARDER_BOOTSTRAP_SERVERS="kafka-cp-kafka.kafka-system.svc.cluster.local:9092" KAFKA_FORWARDER_ENCODING="JSON" ZIPKIN_LOGGING_LEVEL="DEBUG"  STORAGE_METHOD- ZIPKIN_STORAGE_MEM_MAXSPANS-'
+  shell: 'kubectl set env deploy istio-tracing -n istio-system KAFKA_FORWARDER_BOOTSTRAP_SERVERS="kafka-external.kafka-system.svc.cluster.local:31090" KAFKA_FORWARDER_ENCODING="JSON" ZIPKIN_LOGGING_LEVEL="DEBUG"  STORAGE_METHOD- ZIPKIN_STORAGE_MEM_MAXSPANS-'
   when: groups['master'][0] == inventory_hostname
 
 - name: Change container image on istio-tracing to enable kafka stream
