@@ -271,7 +271,9 @@ The kubernetes certificate and configuration files will be stored in the directo
 
 Once the installation finished you can access the environment portal with a browser on:
 
+```
 http://<master1 floating ip>
+```
 
 The following interface is displayed:
 
