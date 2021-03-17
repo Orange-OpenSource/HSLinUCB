@@ -23,11 +23,6 @@
                  - --kubelet-preferred-address-types=InternalIP
                  - --metric-resolution=2s
 
-#- name: generate metric-server deployment file
-#  template:
-#    src: metric-server-deploy.yaml
-#    dest: /tmp/metric-server-deploy-old.yaml
-
 - name: Deploy metric server in kubernetes
   shell: "kubectl apply -f /tmp/metric-server-deploy.yaml"
   register: task_result

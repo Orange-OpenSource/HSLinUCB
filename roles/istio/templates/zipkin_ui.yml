@@ -1,3 +1,31 @@
+# Copyright 2019 Istio Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#deployment file generated and modified from: https://github.com/istio/istio/blob/1.6.12/manifests/charts/istio-telemetry/tracing/templates/deployment-zipkin.yaml
+#Modified lines from original template file:
+#Line 6: Deployment name changed to zipkin-ui
+#Line 9,14,18: app name changed to zipkin-ui
+#Line 37: container name changed to zipkin-ui
+#Line 38: container image changed to docker.io/openzipkin/zipkin
+#Line 69,70,71,72: changed to KAFKA bootstrap server and zipkin debug
+
+#service file generated and modified from: https://github.com/istio/istio/blob/1.6.12/manifests/charts/istio-telemetry/tracing/templates/service.yaml
+#Modified lines from original template file:
+#Line 4: service name changed to zipkin-ui
+#Line 7,16: app name changed to zipkin-ui
+#Line 11: service port changed to 19411
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

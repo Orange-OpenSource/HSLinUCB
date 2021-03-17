@@ -1,4 +1,12 @@
 ------------
+GPL 
+------------
+
+Dependency....: ansible
+Repository....: https://github.com/ansible/ansible
+License.......: https://github.com/ansible/ansible/blob/devel/COPYING
+
+------------
 Apache 2.0
 ------------
 
