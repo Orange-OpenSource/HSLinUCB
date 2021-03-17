@@ -1,32 +1,4 @@
 ------------
-GPL 
-------------
-
-Dependency....: git
-Repository....: https://github.com/git/git
-License.......: https://github.com/git/git/blob/master/LGPL-2.1
-
-Dependency....: ansible-collections-openstack
-Repository....: https://opendev.org/openstack/ansible-collections-openstack
-License.......: https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/COPYING
-
-Dependency....: haveged
-Repository....: https://github.com/asciiprod/haveged
-License.......: https://github.com/asciiprod/haveged/blob/master/COPYING
-
-Dependency....: dnsmasq
-Repository....: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=tree
-License.......: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=blob;f=COPYING-v3;h=94a9ed024d3859793618152ea559a168bbcbb5e2;hb=HEAD
-
-Dependency....: gnupg
-Repository....: https://github.com/gpg/gnupg
-License.......: https://github.com/gpg/gnupg/blob/master/COPYING.LGPL3
-
-Dependency....: squid
-Repository....: https://github.com/squid-cache/squid
-License.......: https://github.com/squid-cache/squid/blob/master/COPYING
-
-------------
 Apache 2.0
 ------------
 
@@ -107,6 +79,14 @@ Repository....: https://github.com/distribution/distribution
 License.......: https://github.com/distribution/distribution/blob/main/LICENSE
 
 ------------
+BSD 2-Clause
+------------
+
+Dependency....: cfssl
+Repository....: https://github.com/cloudflare/cfssl
+License.......: https://github.com/cloudflare/cfssl/blob/master/LICENSE
+
+------------
 BSD 3-Clause
 ------------
 
@@ -127,8 +107,48 @@ Repository....: https://github.com/nginx/nginx
 License.......: http://nginx.org/LICENSE
 
 ------------
+GPL 
+------------
+
+Dependency....: ansible-collections-openstack
+Repository....: https://opendev.org/openstack/ansible-collections-openstack
+License.......: https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/COPYING
+
+Dependency....: haveged
+Repository....: https://github.com/asciiprod/haveged
+License.......: https://github.com/asciiprod/haveged/blob/master/COPYING
+
+Dependency....: dnsmasq
+Repository....: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=tree
+License.......: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=blob;f=COPYING-v3;h=94a9ed024d3859793618152ea559a168bbcbb5e2;hb=HEAD
+
+Dependency....: gnupg
+Repository....: https://github.com/gpg/gnupg
+License.......: https://github.com/gpg/gnupg/blob/master/COPYING.LGPL3
+
+Dependency....: squid
+Repository....: https://github.com/squid-cache/squid
+License.......: https://github.com/squid-cache/squid/blob/master/COPYING
+
+------------
+LGPL 2.1
+------------
+
+Dependency....: git
+Repository....: https://github.com/git/git
+License.......: https://github.com/git/git/blob/master/LGPL-2.1
+
+------------
 MIT
 ------------
+
+Dependency....: curl
+Repository....: https://github.com/curl/curl
+License.......: https://github.com/curl/curl/blob/master/COPYING
+
+Dependency....: jq
+Repository....: https://github.com/stedolan/jq
+License.......: https://github.com/stedolan/jq/blob/master/COPYING
 
 Dependency....: locust
 Repository....: https://github.com/locustio/locust
@@ -142,18 +162,9 @@ Dependency....: python pip
 Repository....: https://github.com/pypa/pip
 License.......: https://github.com/pypa/pip/blob/master/LICENSE.txt
 
-------------
-OTHER
-------------
 
-Dependency....: cfssl
-Repository....: https://github.com/cloudflare/cfssl
-License: https://github.com/cloudflare/cfssl/blob/master/LICENSE
 
-Dependency....: jq
-Repository....: https://github.com/stedolan/jq
-License.......: https://github.com/stedolan/jq/blob/master/COPYING
 
-Dependency....: curl
-Repository....: https://github.com/curl/curl
-License.......: https://github.com/curl/curl/blob/master/COPYING
+
+
+

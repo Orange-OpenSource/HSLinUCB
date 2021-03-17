@@ -1,16 +1,4 @@
 ------------
-GPL 
-------------
-
-Dependency....: ansible
-Repository....: https://github.com/ansible/ansible
-License.......: https://github.com/ansible/ansible/blob/devel/COPYING
-
-Dependency....: procps
-Repository....: https://gitlab.com/procps-ng/procps
-License.......: https://gitlab.com/procps-ng/procps/-/blob/master/COPYING
-
-------------
 Apache 2.0
 ------------
 
@@ -37,6 +25,14 @@ License.......: https://github.com/dpranke/pyjson5/blob/master/LICENSE
 Dependency....: Tensorflow
 Repository....: https://github.com/tensorflow/tensorflow
 License.......: https://github.com/tensorflow/tensorflow/blob/master/LICENSE
+
+------------
+BSD
+------------
+
+Dependency....: openssh
+Repository....: https://github.com/openssh/openssh-portable
+License.......: https://github.com/openssh/openssh-portable/blob/master/LICENCE
 
 ------------
 BSD 3-Clause
@@ -67,6 +63,26 @@ Repository....: https://github.com/mwaskom/seaborn
 License.......: https://github.com/mwaskom/seaborn/blob/master/LICENSE
 
 ------------
+GPL 
+------------
+
+Dependency....: ansible
+Repository....: https://github.com/ansible/ansible
+License.......: https://github.com/ansible/ansible/blob/devel/COPYING
+
+Dependency....: procps
+Repository....: https://gitlab.com/procps-ng/procps
+License.......: https://gitlab.com/procps-ng/procps/-/blob/master/COPYING
+
+------------
+LGPL 2.1
+------------
+
+Dependency....: strace
+Repository....: https://github.com/strace/strace
+License.......: https://github.com/strace/strace/blob/master/COPYING
+
+------------
 MIT
 ------------
 
@@ -86,13 +102,3 @@ Dependency....: Urllib3
 Repository....: https://github.com/urllib3/urllib3/
 License.......: https://github.com/urllib3/urllib3/blob/main/LICENSE.txt
 
-------------
-OTHER
-------------
-Dependency....: strace
-Repository....: https://github.com/strace/strace
-License.......: https://github.com/strace/strace/blob/master/COPYING
-
-Dependency....: openssh
-Repository....: https://github.com/openssh/openssh-portable
-License.......: https://github.com/openssh/openssh-portable/blob/master/LICENCE
