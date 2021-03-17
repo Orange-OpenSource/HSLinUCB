@@ -249,7 +249,7 @@ Executre the following command to test the ssh connection on each virtual machin
 
 `ssh -F ssh_hslinucb.config stress2`
 
-If the ssh connection failed, checks the ssh connectivity of the local machine with the virtual machine "master1" floating ip. Also try to connect without the ssh configuration file:
+If the ssh connection failed, checks the ssh connectivity of the local machine with the virtual machine "master1" floating ip. Checks in your $HOME/.ssh/known_hosts file to see if the floating ip and the private ip of the virtual machines are already in, if so delete these entries. Also try to connect without the ssh configuration file:
 
 `ssh -i hslinucb_ssh.key <ssh user>@<master1 floating ip>`
 
