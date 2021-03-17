@@ -54,8 +54,6 @@
     - istio-namespace.yml
     - kiali-secret.yml
     - istio-install.yml
-#    - http-gateway.yml
-#    - https-gateway.yml
   when: groups['master'][0] == inventory_hostname
 
 - name: Create namespace istio-system

@@ -66,12 +66,3 @@
   retries: 60
   delay: 5
   when: groups['master'][0] == inventory_hostname
-
-#- name: Create metrics kafka topics
-#  shell: "kubectl exec -it kafka-client -n kafka-system -- kafka-topics --if-not-exists --zookeeper kafka-cp-zookeeper:2181 --create --topic metrics --partitions 6 --replication-factor 1"
-#  when: groups['platform + master_group_name][0] == inventory_hostname
-
-#- name: Create actions kafka topics
-#  shell: "kubectl exec -it kafka-client -n kafka-system -- kafka-topics --if-not-exists --zookeeper kafka-cp-zookeeper:2181 --create --topic actions --partitions 6 --replication-factor 1"
-#  when: groups[platform + master_group_name][0] == inventory_hostname
-

@@ -1,0 +1,159 @@
+------------
+GPL 
+------------
+
+Dependency....: git
+Repository....: https://github.com/git/git
+License.......: https://github.com/git/git/blob/master/LGPL-2.1
+
+Dependency....: ansible-collections-openstack
+Repository....: https://opendev.org/openstack/ansible-collections-openstack
+License.......: https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/COPYING
+
+Dependency....: haveged
+Repository....: https://github.com/asciiprod/haveged
+License.......: https://github.com/asciiprod/haveged/blob/master/COPYING
+
+Dependency....: dnsmasq
+Repository....: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=tree
+License.......: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=blob;f=COPYING-v3;h=94a9ed024d3859793618152ea559a168bbcbb5e2;hb=HEAD
+
+Dependency....: gnupg
+Repository....: https://github.com/gpg/gnupg
+License.......: https://github.com/gpg/gnupg/blob/master/COPYING.LGPL3
+
+Dependency....: squid
+Repository....: https://github.com/squid-cache/squid
+License.......: https://github.com/squid-cache/squid/blob/master/COPYING
+
+------------
+Apache 2.0
+------------
+
+Dependency....: Apache httpd
+Repository....: https://github.com/apache/httpd
+License.......: https://github.com/apache/httpd/blob/trunk/LICENSE
+
+Dependency....: Apache mod_wsgi
+Repository....: https://github.com/GrahamDumpleton/mod_wsgi
+License.......: https://github.com/GrahamDumpleton/mod_wsgi/blob/develop/LICENSE
+
+Dependency....: etcd
+Repository....: https://github.com/etcd-io/etcd
+License.......: https://github.com/etcd-io/etcd/blob/master/LICENSE
+
+Dependency....: flannel
+Repository....: https://github.com/flannel-io/flannel
+License.......: https://github.com/flannel-io/flannel/blob/master/LICENSE
+
+Dependency....: istio
+Repository....: https://github.com/istio/istio
+License.......: https://github.com/istio/istio/blob/master/LICENSE
+
+Dependency....: helm
+Repository....: https://github.com/helm/helm
+License.......: https://github.com/helm/helm/blob/master/LICENSE
+
+Dependency....: confluentinc kafka
+Repository....: https://github.com/confluentinc/cp-docker-images
+License.......: https://github.com/confluentinc/cp-docker-images/blob/5.3.3-post/LICENSE
+
+Dependency....: confluentinc zookeeper
+Repository....: https://github.com/confluentinc/cp-docker-images
+License.......: https://github.com/confluentinc/cp-docker-images/blob/5.3.3-post/LICENSE
+
+Dependency....: metrics-server
+Repository....: https://github.com/kubernetes-sigs/metrics-server
+License.......: https://github.com/kubernetes-sigs/metrics-server/blob/master/LICENSE
+
+Dependency....: kubelet
+Repository....: https://github.com/kubernetes/kubelet
+License.......: https://github.com/kubernetes/kubelet/blob/master/LICENSE
+
+Dependency....: kubeadm
+Repository....: https://github.com/kubernetes/kubeadm
+License.......: https://github.com/kubernetes/kubeadm/blob/master/LICENSE
+
+Dependency....: kubectl
+Repository....: https://github.com/kubernetes/kubectl
+License.......: https://github.com/kubernetes/kubectl/blob/master/LICENSE
+
+Dependency....: docker-ce
+Repository....: https://github.com/docker/docker-ce
+License.......: https://github.com/docker/docker-ce/blob/master/LICENSE
+
+Dependency....: docker-python
+Repository....: https://github.com/docker/docker-py
+License.......: https://github.com/docker/docker-py/blob/master/LICENSE
+
+Dependency....: prometheus node exporter
+Repository....: https://github.com/prometheus/node_exporter
+License.......: https://github.com/prometheus/node_exporter/blob/master/LICENSE
+
+Dependency....: prometheus operator
+Repository....: https://github.com/prometheus-operator/prometheus-operator
+License.......: https://github.com/prometheus-operator/prometheus-operator/blob/master/LICENSE
+
+Dependency....: grafana
+Repository....: https://github.com/grafana/grafana
+License.......: https://github.com/grafana/grafana/blob/master/LICENSE
+
+Dependency....: openssl
+Repository....: https://github.com/openssl/openssl
+License.......: https://github.com/openssl/openssl/blob/master/LICENSE.txt
+
+Dependency....: docker registry
+Repository....: https://github.com/distribution/distribution
+License.......: https://github.com/distribution/distribution/blob/main/LICENSE
+
+------------
+BSD 3-Clause
+------------
+
+Dependency....: tcpdump
+Repository....: https://github.com/the-tcpdump-group/tcpdump
+License.......: https://github.com/the-tcpdump-group/tcpdump/blob/master/LICENSE
+
+Dependency....: Anaconda
+Repository....: https://github.com/Anaconda-Platform/anaconda-project
+License.......: https://github.com/Anaconda-Platform/anaconda-project/blob/master/LICENSE.txt
+
+Dependency....: JupyterHub
+Repository....: https://github.com/jupyterhub/jupyterhub
+License.......: https://github.com/jupyterhub/jupyterhub/blob/master/COPYING.md
+
+Dependency....: nginx
+Repository....: https://github.com/nginx/nginx
+License.......: http://nginx.org/LICENSE
+
+------------
+MIT
+------------
+
+Dependency....: locust
+Repository....: https://github.com/locustio/locust
+License.......: https://github.com/locustio/locust/blob/master/LICENSE
+
+Dependency....: python yaml
+Repository....: https://github.com/yaml/pyyaml
+License.......: https://github.com/yaml/pyyaml/blob/master/LICENSE
+
+Dependency....: python pip
+Repository....: https://github.com/pypa/pip
+License.......: https://github.com/pypa/pip/blob/master/LICENSE.txt
+
+------------
+OTHER
+------------
+
+Dependency....: cfssl
+Repository....: https://github.com/cloudflare/cfssl
+License: https://github.com/cloudflare/cfssl/blob/master/LICENSE
+
+Dependency....: jq
+Repository....: https://github.com/stedolan/jq
+License.......: https://github.com/stedolan/jq/blob/master/COPYING
+
+Dependency....: curl
+Repository....: https://github.com/curl/curl
+License.......: https://github.com/curl/curl/blob/master/COPYING

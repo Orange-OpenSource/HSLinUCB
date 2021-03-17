@@ -79,26 +79,6 @@
     - "ResponseTimeSize"
   when: groups['master'][0] == inventory_hostname
 
-
-################Section to update if modifications are made in Dockerfile (see Dockerfile for relevant comments)
-
-- name: Remove sources.list image in Dockerfile
-  lineinfile:
-    dest: "/tmp/dynamic_component/Dockerfile"
-    regexp: "ADD sources.list /etc/apt/sources.list"
-    state: absent
-  when: groups['master'][0] == inventory_hostname and CloudName is defined and CloudName|lower != 'devwatt'
-
-- name: Remove artifactory usage in Dockerfile
-  lineinfile:
-    dest: "/tmp/dynamic_component/Dockerfile"
-    regexp: "RUN pip2 install -r requirements.txt -i https://artifactory-iva.si.francetelecom.fr/artifactory/api/pypi/python-virt-orange-product-devops/simple$"
-    line: "RUN pip2 install -r requirements.txt"
-    state: present
-  when: groups['master'][0] == inventory_hostname and CloudName is defined and CloudName|lower != 'devwatt'
-
-################End of section
-
 - name: Build docker image
   docker_image:
     path: /tmp/dynamic_component
